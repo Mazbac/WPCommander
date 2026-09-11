@@ -1,7 +1,7 @@
 {
-  "name": "ai-project-starter",
+  "name": "wpcommander",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -47,7 +47,7 @@
     "vite": "^8.3.0",
     "vitest": "^5.0.0"
   },
-  "description": "AI-native starter for fast, standards-led product development",
+  "description": "Safe WordPress control plane for ChatGPT Actions",
   "engines": {
     "node": ">=24.0.0"
   }

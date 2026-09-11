@@ -1,27 +1,35 @@
 # Roadmap
 
-Organize work as MVP → epics → concrete user capabilities. Avoid sprints, story points, and coordination ceremony unless a future team actually needs them.
-
 ## MVP
 
 ### Epic: Product intake
 
-- [ ] Normalize raw idea and references
-- [ ] Classify product surface, risk, capabilities, and lifecycle
-- [ ] Define first successful user outcome
+- [x] Normalize raw idea into a product contract and explicit non-goals.
+- [x] Classify the product as a high-consequence WordPress integration.
+- [x] Define the install → GPT connection → inspect → plan → apply → revert journey.
 
-### Epic: Foundation
+### Epic: Control-plane foundation
 
-- [ ] Select only the infrastructure required by the product
-- [ ] Establish canonical app shell and core interaction patterns
-- [ ] Establish real data/contracts for the first vertical slice
+- [x] Package the repository as an installable WordPress 6.9+ plugin while retaining the React admin application.
+- [x] Add the WordPress-native WPCommander admin surface with connection, capabilities, diagnostics, and activity views.
+- [x] Expose a generated OpenAPI document and readiness/manifest endpoint.
+- [x] Register WPCommander abilities and discover already-registered WordPress Abilities.
 
-### Epic: Core workflow
+### Epic: Universal read
 
-- [ ] Build the shortest complete path to user value
-- [ ] Cover applicable loading, empty, error, permission, and recovery states
-- [ ] Verify functional, accessibility, and visual behavior
+- [x] Define stable resource addresses for posts, post meta, options, media, terms, users, comments, menus, plugins, themes, site state, and structured nested values.
+- [x] Implement bounded/redacted search and inspect operations with WordPress capability checks.
+- [x] Make generic structured data useful for page-builder/theme storage without vendor-specific adapters.
+- [x] Add production-safe search → inspect diagnostics for every first-class resource kind.
+- [ ] Add privileged developer-plane reads for filesystem, database, WP-CLI, and runtime introspection.
+
+### Epic: Safe change
+
+- [ ] Implement plan/apply for structured set, replace, and remove operations.
+- [ ] Reject stale plans and duplicate applies.
+- [ ] Record activity with reversible payloads where safe.
+- [ ] Implement authorized revert and verify the end-to-end Custom GPT flow.
 
 ## Later
 
-Put non-MVP ideas here. Promote an item only when it becomes necessary for the MVP or is explicitly prioritized by the user.
+Media upload/transform, plugin/theme lifecycle management, multisite, scheduled automation, compatibility shims for exceptional products, and richer native Ability passthrough. Arbitrary SQL/filesystem/PHP execution stays outside the generic control surface.

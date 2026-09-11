@@ -1,13 +1,27 @@
-:root {
+﻿:root {
   --mantine-color-dimmed: var(--mantine-color-gray-7);
 }
 
-html,
-body,
-#root {
+#root,
+#wpcommander-root {
   min-height: 100%;
 }
 
-body {
-  margin: 0;
+.wpcommander-app {
+  width: 100%;
+  max-width: 76rem;
+}
+
+#root .wpcommander-app {
+  padding: var(--mantine-spacing-xl);
+}
+
+#wpcommander-root .wpcommander-app {
+  padding: var(--mantine-spacing-md) var(--mantine-spacing-lg)
+    var(--mantine-spacing-xl) 0;
+}
+
+.wpcommander-schema {
+  flex: 1;
+  overflow-wrap: anywhere;
 }

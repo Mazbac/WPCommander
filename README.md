@@ -1,27 +1,40 @@
-# AI Project Starter
+# WPCommander
 
-A lean starter for building products quickly with ChatGPT, Remote Desktop Commander, and GitHub without making project quality depend on chat memory.
+WPCommander is a WordPress control plane for ChatGPT Actions. It exposes a small, stable API that lets a Custom GPT discover and execute WordPress capabilities without requiring a bespoke adapter for every theme or plugin.
 
-## Start a project
+## Direction
 
-1. Create a repository from this template.
-2. Open [`docs/PROMPTS.md`](docs/PROMPTS.md) and copy the **Start a new project** prompt into a new ChatGPT chat.
-3. Put raw screenshots, links, notes, and non-sensitive inspiration in `references/` when useful.
-4. Give the AI your messy idea; the repository intake process turns it into product requirements, MVP, UX direction, architecture, capabilities, risk, and current state.
-5. Keep `npm run dev` running for a live preview while building vertical slices.
+- WordPress 6.9+ native Abilities API is the capability substrate.
+- WordPress Application Passwords provide revocable external authentication.
+- WPCommander uses generic resource capabilities for content/settings that do not already expose an Ability.
+- Consequential changes use inspect → plan → apply, with stale-state protection and audit/revert where safe.
+- Arbitrary SQL, filesystem access, PHP execution, and secret browsing are not part of the generic control surface.
 
-For a fresh chat on an existing project or a quick change, `docs/PROMPTS.md` also contains copy-ready continuation prompts.
+See `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, and `docs/STATE.md` for durable project truth.
 
-## Commands
+## Development
 
-- `npm run dev` — live development preview.
-- `npm run doctor` — environment sanity check.
-- `npm run verify` — format, lint, types, UI conformance, unit tests, and production build.
-- `npm run verify:full` — verification plus browser accessibility/E2E and visual regression.
-- `npm run test:visual -- --update-snapshots` — update intentional visual baselines only after review.
+```bash
+npm ci
+npm run dev
+```
 
-## Principles
+The Vite preview renders the same React admin application that the WordPress plugin mounts. Development fixture data implements the same bootstrap contract as WordPress.
 
-Professional defaults, minimal ceremony, reusable components, one source of truth per concern, automated verification, and progressive rigor based on product risk.
+## Build and verify
 
-The template intentionally does not include authentication, databases, billing, analytics, or other product-specific infrastructure. Activate only what the project actually needs.
+```bash
+npm run verify
+npm run verify:full
+```
+
+The production build writes deterministic assets under `dist/assets/` for the plugin admin page.
+
+## Current WordPress surface
+
+- `GET /wp-json/wpcommander/v1/openapi` — public Action schema; contains no site secrets.
+- `GET /wp-json/wpcommander/v1/manifest` — authenticated readiness metadata.
+- `GET /wp-json/wpcommander/v1/abilities` — authenticated exposed Ability discovery.
+- `POST /wp-json/wpcommander/v1/abilities/execute` — executes one exposed Ability as the authenticated WordPress user.
+
+Configure the Custom GPT Action with the OpenAPI URL and Basic authentication using a dedicated WordPress Application Password. The normal WordPress account password should never be entered into the GPT Action configuration.

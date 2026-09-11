@@ -29,13 +29,13 @@ export function AppFrame({ children }: AppFrameProps) {
             size="sm"
             aria-label="Toggle navigation"
           />
-          <Text fw={600}>AI Project Starter</Text>
+          <Text fw={600}>WPCommander</Text>
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="sm">
         <Stack gap="xs">
-          <NavLink label="UI baseline" active />
+          <NavLink label="Overview" active />
         </Stack>
       </AppShell.Navbar>
 

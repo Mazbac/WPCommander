@@ -1,7 +1,7 @@
-import { createTheme, type CSSVariablesResolver } from '@mantine/core'
+﻿import { createTheme, type CSSVariablesResolver } from '@mantine/core'
 
 const fontFamily =
-  'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif'
 
 export const layoutTokens = {
   headerHeight: 56,
@@ -12,7 +12,7 @@ export const theme = createTheme({
   primaryColor: 'blue',
   primaryShade: { light: 8, dark: 6 },
   autoContrast: true,
-  defaultRadius: 'sm',
+  defaultRadius: 'xs',
   fontFamily,
   headings: {
     fontFamily,

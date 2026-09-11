@@ -6,7 +6,14 @@ import './index.css'
 import App from './App'
 import { cssVariablesResolver, theme } from './theme/theme'
 
-createRoot(document.getElementById('root')!).render(
+const rootElement =
+  document.getElementById('wpcommander-root') ?? document.getElementById('root')
+
+if (!rootElement) {
+  throw new Error('WPCommander root element was not found.')
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver}>
       <App />

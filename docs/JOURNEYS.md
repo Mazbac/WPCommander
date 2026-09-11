@@ -1,23 +1,28 @@
 # User lifecycle
 
-Select only the stages that apply to the product, but design those stages deliberately. A feature is not complete if it breaks the end-to-end journey around it.
+## Primary journey: install to first successful change
 
-## Lifecycle map
+1. Install and activate WPCommander on a WordPress 6.9+ site.
+2. Open WPCommander in wp-admin and see whether the site is ready to connect.
+3. Create a dedicated WordPress Application Password for the administrator account and copy the WPCommander Action schema URL.
+4. In the Custom GPT editor, add an Action using the schema and Basic authentication.
+5. Ask the GPT about the site. It calls discovery/search/inspect and explains what it found.
+6. Ask for a change such as replacing text or a color. The GPT creates a plan and reports the resolved target plus before/after value.
+7. After approval, the GPT applies the plan. WPCommander rejects stale or unauthorized writes and records the change.
+8. The admin can inspect activity and revert an eligible change from wp-admin or via the GPT.
 
-- Discover/acquire: how users reach the product and understand its purpose.
-- Install/open: platform-appropriate acquisition, prerequisites, failure/retry, and permissions.
-- First launch: reach useful product UI quickly; avoid ceremonial screens.
-- Required setup: ask only for information or connections needed to function.
-- Onboarding: teach contextually and minimally; optimize for the first successful task.
-- Normal/returning use: preserve appropriate preferences/state and make common work efficient.
-- Interruption/recovery: handle lost connectivity, expired sessions, restarts, denied permissions, retries, and partial work when relevant.
-- Update/migration: preserve data/config compatibility and provide recovery for consequential migrations.
-- Account/data management: make ownership, export, retention, cancellation, sign-out, and deletion semantics explicit.
-- Uninstall/leave: remove app-owned artifacts cleanly while preserving user-created data unless deletion is explicitly requested.
-- Reinstall/return: deliberately choose whether state is restored or reset.
+## Returning use
 
-## Product-specific journey
+The normal path is conversational: ask → discover if needed → inspect → plan → apply. Connection setup should not reappear unless the credential is missing/revoked or WordPress compatibility changes.
 
-Replace this section during intake with the actual shortest path from acquisition to the first successful outcome, plus consequential recovery/exit paths.
+## Recovery
 
-For each new feature ask whether it changes setup, onboarding, permissions, returning state, updates, export, account deletion, uninstall, or recovery. If none apply, do not add lifecycle ceremony.
+- Authentication failure: show a clear reconnect path; never ask for the normal WordPress password.
+- Target not found/ambiguous: return bounded candidates and require a more specific target before planning.
+- Stale target: invalidate the plan and make the GPT inspect/re-plan rather than overwriting newer work.
+- Apply failure: leave the target unchanged when possible and return a machine-readable WordPress error.
+- Lost credential: revoke it in the WordPress user profile and create a new dedicated Application Password.
+
+## Uninstall
+
+Remove WPCommander-owned settings and transient plan data. Preserve user-created WordPress content and audit records unless the admin explicitly chooses deletion.

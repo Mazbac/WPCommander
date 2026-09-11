@@ -1,29 +1,37 @@
 # Product
 
-This file is the durable source of truth for what the product is. Replace template placeholders during project intake; do not use it as a work log.
+WPCommander lets a WordPress administrator control a site through ChatGPT without building a bespoke integration for every theme or plugin.
 
 ## Goal
 
-- Problem: TBD
-- Target user: TBD
-- Core successful outcome: TBD
-- Why this product should exist: TBD
+- Problem: WordPress behavior and design are spread across posts, blocks, metadata, options, media, themes, plugins, and vendor-specific storage. Automating each vendor separately does not scale.
+- Target user: a WordPress site owner, builder, or agency operator who is comfortable asking ChatGPT to make site changes.
+- Core successful outcome: the user can ask ChatGPT to find, explain, preview, and safely change site content or configuration through one stable WordPress interface.
+- Why this product should exist: WordPress already has common primitives and a machine-readable Abilities API; WPCommander should expose those foundations instead of recreating every vendor UI.
 
 ## Product profile
 
-- Surface/distribution: TBD (web, desktop, mobile, extension, CLI, service)
-- Primary environment: TBD
-- Risk level: TBD (lightweight, standard, high-consequence)
-- Valuable/sensitive assets affected: TBD
+- Surface/distribution: installable WordPress plugin with a small WordPress admin UI and an authenticated REST/OpenAPI interface for Custom GPT Actions.
+- Primary environment: WordPress 6.9+; develop and verify against currently maintained WordPress releases.
+- Risk level: high-consequence because authorized writes can change a production website.
+- Valuable/sensitive assets affected: published content, design data, media, site settings, plugin/theme-owned metadata, and operational configuration.
 
 ## MVP
 
-Define the smallest end-to-end version that is genuinely useful. Each item must describe a user capability, not an implementation detail.
+- Connect one Custom GPT to one WordPress site with a revocable WordPress credential and a copy/import-ready OpenAPI schema.
+- Discover what the site can do using WordPress Abilities plus WPCommander generic resource capabilities.
+- Search and inspect WordPress resources without knowing which builder or theme produced them.
+- Preview a structured change before it is applied, including the exact resource and before/after value.
+- Apply an approved change with WordPress capability checks, concurrency protection, and an audit record.
+- Revert a reversible WPCommander change from the activity history.
 
 ## Later / non-goals
 
-Record worthwhile ideas that are explicitly outside the current MVP so they do not hijack development.
+- No endless Elementor-, Divi-, theme-, or plugin-specific adapter catalog. A thin compatibility layer is allowed only when a high-value capability cannot be represented through generic WordPress primitives or a registered Ability.
+- No arbitrary SQL, filesystem editing, PHP execution, credential extraction, or secret browsing in the normal control surface.
+- Plugin/theme installation, code editing, multisite fleet management, scheduled automation, and broad media transformation are later capabilities.
+- WPCommander is the deterministic WordPress control plane; ChatGPT remains the conversational planner. The plugin does not need its own general-purpose chatbot.
 
 ## Success
 
-State how we know the first useful version works for its intended user. Raw ideas and visual references belong in `references/`; durable conclusions belong here or in the relevant domain document.
+The first useful version succeeds when a fresh WordPress 6.9+ site can install WPCommander, connect a Custom GPT, let the GPT discover site structure, locate content stored in a post/meta/option, preview a change such as text or a color value, apply it safely, and show/revert the resulting activity without any vendor-specific adapter.

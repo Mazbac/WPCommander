@@ -1,44 +1,36 @@
 # UI and interaction contract
 
-The UI must feel intentionally designed across time, not merely look good on the first screen. Industry/platform guidance and existing product patterns outrank AI taste.
+WPCommander has a small operational admin UI. ChatGPT is the primary conversational interface; wp-admin exists for connection, visibility, and recovery.
+
+## Information architecture
+
+- `Overview`: connection readiness, site/control-plane status, and the shortest next action.
+- `Capabilities`: what WordPress and WPCommander expose to the connected GPT, with read/write distinction.
+- `Activity`: planned/applied/reverted changes and recovery actions.
+- `Settings`: only configuration that cannot be inferred safely; keep this small.
 
 ## Core rules
 
-- KISS: if removing copy, decoration, a container, or a control does not reduce understanding, remove it.
-- Friendly means clear labels, sensible defaults, useful errors, and predictable behavior — not verbose explanation.
-- Use Mantine components and semantic theme tokens before custom UI or raw values.
-- Shared layouts own geometry. Feature screens provide content and product behavior, not bespoke page spacing.
-- Consistency across screens beats local visual optimization.
-- Do not patch alignment with arbitrary offsets; fix the responsible layout/component.
-- One canonical term and action label per product concept.
+- Use Mantine components and semantic theme tokens; no ornamental dashboard chrome or invented metrics.
+- Lead with operational state: Ready, Needs setup, Warning, or Error, always with text in addition to color.
+- Never display a saved credential after its one-time creation flow. Link to native WordPress Application Password management for revocation.
+- Consequential actions name the target and consequence. Revert is explicit and unavailable when the audit entry is not safely reversible.
+- Technical identifiers such as REST routes, resource addresses, and JSON pointers may be shown in secondary/detail UI but not as the primary label.
 
-## Canonical structure
+## Overview contract
 
-Prefer reusable primitives such as `AppFrame`, `PageHeader`, `Section`, `Toolbar`, `FormActions`, `EmptyState`, `ErrorState`, and table patterns. Create a new pattern only when existing ones cannot express the requirement cleanly.
+The first screen should answer: Is WPCommander ready? How do I connect ChatGPT? What can it currently control? What changed recently?
 
-Before implementing a screen, inspect the closest analogous screen. New list pages should resemble established list pages; settings should use established settings structure; destructive flows should reuse the canonical confirmation pattern.
+Use a compact readiness card, a copyable Action schema URL, a short three-step connection flow, capability summary, and recent activity. Avoid a ceremonial onboarding wizard.
 
-## Visual tokens
+## States and accessibility
 
-Typography, spacing, control sizes, radii, borders, colors, shadows, breakpoints, focus treatment, and motion belong to the theme or shared components. Semantic color communicates status; color is never the only status signal.
-
-## Applicable states
-
-For each feature, explicitly determine which states apply: default, hover/focus/disabled, loading, empty, error, partial/stale data, offline/reconnecting, permission/read-only, success, destructive/reversible, long/missing content, and supported viewport/input modes. Do not implement impossible states merely to satisfy a checklist.
-
-Complex asynchronous or consequential workflows should define valid state transitions instead of accumulating contradictory booleans.
-
-## Accessibility and platform behavior
-
-WCAG 2.2 AA is the web baseline. Use semantic HTML, visible focus, keyboard operation, meaningful labels, sufficient contrast, non-color status cues, zoom/reflow support, reduced-motion/high-contrast preferences, and accessible dynamic status announcements. Use the component library's dialog/menu/popover focus behavior instead of reimplementing it.
-
-Normal browser behavior is part of UX: meaningful state should survive refresh/deep links when appropriate, back/forward should work, and unsaved work needs an explicit autosave/save/discard policy.
+Cover loading, connection-not-configured, auth failure, unsupported WordPress version, no activity, partial capability discovery, stale plan, apply failure, and read-only permission states when applicable. WCAG 2.2 AA, keyboard operation, visible focus, semantic status announcements, responsive/reflow behavior, and safe long-value truncation are baseline requirements.
 
 ## Anti-drift
 
-- Canonical components and the UI showroom are the visual reference.
-- Use stress data: long strings, empty values, Unicode, large numbers, many rows, and realistic filenames.
-- Visual snapshots are reviewed evidence. Never regenerate them blindly after a failure.
-- Token/shared-component changes require checking representative consumers.
-- Preview the actual application code; never maintain a separate mock UI that can diverge.
-- Intentional system evolution happens centrally and moves affected screens together.
+The local Vite preview renders the same React application code that is embedded in WordPress; development data comes through a fixture implementation of the production data contract rather than a separate mock screen.
+
+## WordPress admin host
+
+The plugin UI is hosted inside `wp-admin` and must use WordPress's existing admin chrome rather than rendering a second app shell. The React root owns only page content. Global `body` geometry/styles are forbidden on the plugin page; spacing and width belong to the WPCommander root so the WordPress sidebar, toolbar, notices, and responsive behavior remain authoritative.
