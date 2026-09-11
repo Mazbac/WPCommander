@@ -69,3 +69,7 @@ WPCommander keeps its Action schema compact and presents it directly in wp-admin
 ## 2026-09-11 — D016: WordPress release folder is always `wpcommander/`
 
 Every installable release archive contains exactly one fixed top-level `wpcommander/` directory with `wpcommander.php` beneath it. Version numbers belong in plugin metadata and the archive filename, never in the installed directory name. This preserves the canonical plugin identity `wpcommander/wpcommander.php` so manual uploads replace the existing installation instead of creating duplicates.
+
+## 2026-09-12 — D017: Readiness uses actual Application Password availability
+
+WPCommander must distinguish technical support from real authentication availability. Connection readiness, credential creation, and diagnostics use WordPress's filtered site/user availability checks so security plugins or site policy cannot produce a false READY state.

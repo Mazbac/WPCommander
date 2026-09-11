@@ -1,10 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
+import { developmentControlPlane } from './data/controlPlane'
 import { theme } from './theme/theme'
 
 describe('WPCommander overview', () => {
+  afterEach(() => {
+    delete window.wpCommanderBootstrap
+  })
+
   it('renders connection readiness and GPT setup', () => {
     render(
       <MantineProvider theme={theme}>
@@ -23,5 +28,29 @@ describe('WPCommander overview', () => {
     expect(
       screen.getByRole('button', { name: 'Copy GPT instructions' }),
     ).toBeVisible()
+  })
+
+  it('explains when Application Password authentication is unavailable', () => {
+    window.wpCommanderBootstrap = {
+      ...developmentControlPlane,
+      connectionStatus: 'warning',
+      connectionMessage:
+        'Application Passwords are disabled by WordPress site policy or a security plugin. Enable them before connecting ChatGPT.',
+      applicationPasswordSupported: false,
+    }
+
+    render(
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Authentication unavailable')).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Application Passwords are disabled by WordPress site policy or a security plugin.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Generate connection token' }),
+    ).toBeDisabled()
   })
 })

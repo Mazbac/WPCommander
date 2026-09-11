@@ -3,9 +3,9 @@
 ## Primary journey: install to first successful change
 
 1. Install and activate WPCommander on a WordPress 6.9+ site.
-2. Open WPCommander in wp-admin and see whether the site is ready to connect.
-3. Create a dedicated WordPress Application Password for the administrator account and copy the WPCommander Action schema URL.
-4. In the Custom GPT editor, add an Action using the schema and Basic authentication.
+2. Open WPCommander in wp-admin and see whether the site is ready to connect, including whether Application Password authentication is actually available after security-plugin/site-policy filters.
+3. Generate the dedicated WPCommander connection token in the plugin, then copy the Action schema and recommended GPT instructions.
+4. In the Custom GPT editor, add an Action using the pasted schema and the generated Basic authentication token.
 5. Ask the GPT about the site. It calls discovery/search/inspect and explains what it found.
 6. Ask for a change such as replacing text or a color. The GPT creates a plan and reports the resolved target plus before/after value.
 7. After approval, the GPT applies the plan. WPCommander rejects stale or unauthorized writes and records the change.

@@ -70,27 +70,43 @@ const developmentDiagnostics: DiagnosticReport = {
     'site',
   ],
   checks: [
-    ['post', 'Posts and pages', 'post/42'],
-    ['post-meta', 'Post metadata / builders', 'post/42/meta/_elementor_data'],
-    ['option', 'Options and theme settings', 'option/blogname'],
-    ['media', 'Media library', 'media/120'],
-    ['term', 'Taxonomies and terms', 'term/category/3'],
-    ['user', 'Users', 'user/1'],
-    ['comment', 'Comments', 'comment/17'],
-    ['menu', 'Classic navigation menus', 'menu/4'],
-    ['plugin', 'Plugins', 'plugin/elementor%2Felementor.php'],
-    ['theme', 'Themes', 'theme/essentials'],
-    ['site', 'Site and environment', 'site'],
-    ['abilities', 'WordPress Abilities', undefined],
-  ].map(([id, label, address]) => ({
-    id: id as string,
-    label: label as string,
-    status: 'ok' as const,
-    address: address as string | undefined,
-    detail: address
-      ? `Search + inspect succeeded for ${address}.`
-      : 'Exposed abilities are discoverable.',
-  })),
+    ...[
+      ['post', 'Posts and pages', 'post/42'],
+      ['post-meta', 'Post metadata / builders', 'post/42/meta/_elementor_data'],
+      ['option', 'Options and theme settings', 'option/blogname'],
+      ['media', 'Media library', 'media/120'],
+      ['term', 'Taxonomies and terms', 'term/category/3'],
+      ['user', 'Users', 'user/1'],
+      ['comment', 'Comments', 'comment/17'],
+      ['menu', 'Classic navigation menus', 'menu/4'],
+      ['plugin', 'Plugins', 'plugin/elementor%2Felementor.php'],
+      ['theme', 'Themes', 'theme/essentials'],
+      ['site', 'Site and environment', 'site'],
+      ['abilities', 'WordPress Abilities', undefined],
+    ].map(([id, label, address]) => ({
+      id: id as string,
+      label: label as string,
+      status: 'ok' as const,
+      address: address as string | undefined,
+      detail: address
+        ? `Search + inspect succeeded for ${address}.`
+        : 'Exposed abilities are discoverable.',
+    })),
+    {
+      id: 'application-passwords',
+      label: 'Application Password authentication',
+      status: 'ok',
+      detail:
+        'WordPress Application Password authentication is available for the current account.',
+    },
+    {
+      id: 'chatgpt-reachability',
+      label: 'ChatGPT reachability',
+      status: 'ok',
+      detail:
+        'A ChatGPT-style request reaches WPCommander through the public web edge.',
+    },
+  ],
 }
 
 function SetupCopyItem({
@@ -271,11 +287,19 @@ export function OverviewPage() {
                 </Text>
               </Stack>
               <Badge variant="outline">
-                {snapshot.connectionCredentialExists || credential
-                  ? 'Credential ready'
-                  : 'Not connected'}
+                {!snapshot.applicationPasswordSupported
+                  ? 'Authentication unavailable'
+                  : snapshot.connectionCredentialExists || credential
+                    ? 'Credential ready'
+                    : 'Not connected'}
               </Badge>
             </Group>
+
+            {snapshot.connectionStatus !== 'ready' ? (
+              <Text c="orange.9" size="sm" role="status">
+                {snapshot.connectionMessage}
+              </Text>
+            ) : null}
 
             <Divider />
 

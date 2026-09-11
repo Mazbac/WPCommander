@@ -438,7 +438,7 @@ final class WPCommander {
 
 	public function can_create_connection_password(): bool {
 		$user_id = get_current_user_id();
-		return $user_id > 0 && wp_is_application_passwords_supported() && current_user_can( 'create_app_password', $user_id );
+		return $user_id > 0 && wp_is_application_passwords_available_for_user( $user_id ) && current_user_can( 'create_app_password', $user_id );
 	}
 
 	public function rest_create_application_password() {
@@ -490,19 +490,30 @@ final class WPCommander {
 	}
 
 	public function get_manifest_data(): array {
-		$supported = wp_is_application_passwords_supported();
+		$user_id            = get_current_user_id();
+		$supported          = wp_is_application_passwords_supported();
+		$available          = wp_is_application_passwords_available();
+		$available_for_user = $available && $user_id > 0 && wp_is_application_passwords_available_for_user( $user_id );
+
+		if ( ! $supported ) {
+			$connection_message = __( 'Application Passwords require HTTPS or a supported local environment.', 'wpcommander' );
+		} elseif ( ! $available ) {
+			$connection_message = __( 'Application Passwords are disabled by WordPress site policy or a security plugin. Enable them before connecting ChatGPT.', 'wpcommander' );
+		} elseif ( ! $available_for_user ) {
+			$connection_message = __( 'Application Passwords are not available for the current WordPress account.', 'wpcommander' );
+		} else {
+			$connection_message = __( 'Control plane is ready for a Custom GPT connection.', 'wpcommander' );
+		}
 
 		return array(
 			'siteName'          => get_bloginfo( 'name' ),
 			'wordpressVersion'  => get_bloginfo( 'version' ),
 			'pluginVersion'     => WPCOMMANDER_VERSION,
 			'accessMode'        => $this->is_read_only_mode() ? 'read-only' : 'write-enabled',
-			'connectionStatus'  => $supported ? 'ready' : 'warning',
-			'connectionMessage' => $supported
-				? __( 'Control plane is ready for a Custom GPT connection.', 'wpcommander' )
-				: __( 'Application Passwords are unavailable. HTTPS or a supported local environment is required.', 'wpcommander' ),
+			'connectionStatus'  => $available_for_user ? 'ready' : 'warning',
+			'connectionMessage' => $connection_message,
 			'schemaUrl'         => rest_url( 'wpcommander/v1/openapi' ),
-			'applicationPasswordSupported' => $supported,
+			'applicationPasswordSupported' => $available_for_user,
 			'connectionCredentialExists'   => $this->has_connection_password(),
 			'resourceKinds'     => array( 'post', 'post-meta', 'option', 'media', 'term', 'user', 'comment', 'menu', 'plugin', 'theme', 'site' ),
 			'capabilities'      => array(
@@ -591,6 +602,17 @@ final class WPCommander {
 			'label'  => __( 'WordPress Abilities', 'wpcommander' ),
 			'status' => 'ok',
 			'detail' => sprintf( __( '%d abilities are exposed to external clients.', 'wpcommander' ), $exposed ),
+		);
+
+		$current_user_id                = get_current_user_id();
+		$application_passwords_available = $current_user_id > 0 && wp_is_application_passwords_available_for_user( $current_user_id );
+		$checks[] = array(
+			'id'     => 'application-passwords',
+			'label'  => __( 'Application Password authentication', 'wpcommander' ),
+			'status' => $application_passwords_available ? 'ok' : 'warning',
+			'detail' => $application_passwords_available
+				? __( 'WordPress Application Password authentication is available for the current account.', 'wpcommander' )
+				: __( 'Application Password authentication is disabled for the current account by site policy or a security plugin. External GPT credentials cannot authenticate until it is enabled.', 'wpcommander' ),
 		);
 
 		$checks[] = $this->probe_chatgpt_reachability();
