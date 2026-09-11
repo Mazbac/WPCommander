@@ -21,11 +21,11 @@ Provider-specific integrations are optional expertise, not required access. Elem
 
 ## External API
 
-The stable ChatGPT Action surface stays compact: manifest/diagnostics, discovery, generic ability execution, and mutation/audit operations. New WordPress capabilities should appear through discovery rather than requiring OpenAPI growth.
+The stable ChatGPT Action surface stays compact: manifest/diagnostics, three explicit generic resource operations (search, inspect, search-inside), dynamic Ability discovery/execution, and later mutation/audit operations. Explicit resource operations give the GPT strongly typed arguments while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through resources or Ability discovery rather than one Action endpoint per plugin.
 
 ## Authentication and authorization
 
-- External GPT access uses WordPress Application Passwords over HTTP Basic authentication.
+- External GPT access uses WordPress Application Passwords over HTTP Basic authentication. The wp-admin setup action may create/rotate a WPCommander-specific Application Password for the current administrator and returns only a one-time Base64 Basic token; WPCommander never stores the plaintext credential.
 - Every operation runs as the authenticated WordPress user and checks the narrowest applicable capability.
 - Sensitive options/meta are denied by default; credentials, salts, sessions, and secret-like values are never returned by generic discovery.
 - Privileged developer abilities require an additional explicit feature gate. They are disabled on production by default and are never implied by possession of an Application Password alone.

@@ -21,7 +21,7 @@ WPCommander has a small operational admin UI. ChatGPT is the primary conversatio
 
 The first screen should answer: Is WPCommander ready? How do I connect ChatGPT? What can it currently control? What changed recently?
 
-Use a compact readiness card, a copyable Action schema URL, a short three-step connection flow, capability summary, and recent activity. Avoid a ceremonial onboarding wizard.
+Use a compact status row and one primary WordPress-style connection panel with three steps: explicitly generate/rotate a dedicated one-time Basic token, copy the site-specific Action schema, then copy the recommended GPT instructions. Direct schema paste is the default; the schema URL is secondary. Keep schema/instruction bodies collapsed behind details by default, and present diagnostics/capabilities as simple tables or rows rather than dashboard-card grids.
 
 ## States and accessibility
 

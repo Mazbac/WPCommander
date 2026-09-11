@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import {
   Badge,
+  Box,
   Button,
   Code,
   CopyButton,
+  Divider,
   Group,
-  List,
   Paper,
-  SimpleGrid,
   Stack,
   Table,
   Text,
@@ -37,6 +37,21 @@ const diagnosticTone = {
   ok: { color: 'green.8', foreground: 'black' },
   warning: { color: 'yellow.9', foreground: 'black' },
 } as const
+
+type ConnectionCredential = {
+  username: string
+  basicToken: string
+  createdAt: string
+  notice: string
+}
+
+type SetupCopyItemProps = {
+  title: string
+  description: string
+  value: string
+  copyLabel: string
+  detailLabel: string
+}
 
 const developmentDiagnostics: DiagnosticReport = {
   generatedAt: new Date().toISOString(),
@@ -78,11 +93,94 @@ const developmentDiagnostics: DiagnosticReport = {
   })),
 }
 
+function SetupCopyItem({
+  title,
+  description,
+  value,
+  copyLabel,
+  detailLabel,
+}: SetupCopyItemProps) {
+  return (
+    <Stack gap="xs">
+      <Group justify="space-between" align="flex-start" wrap="wrap">
+        <Stack gap={3}>
+          <Text fw={600}>{title}</Text>
+          <Text c="dimmed" size="sm">
+            {description}
+          </Text>
+        </Stack>
+        <CopyButton value={value}>
+          {({ copied, copy }) => (
+            <Button variant="default" onClick={copy}>
+              {copied ? 'Copied' : copyLabel}
+            </Button>
+          )}
+        </CopyButton>
+      </Group>
+      <Box component="details" className="wpcommander-details">
+        <Box component="summary" className="wpcommander-details-summary">
+          {detailLabel}
+        </Box>
+        <Code block className="wpcommander-code-preview">
+          {value}
+        </Code>
+      </Box>
+    </Stack>
+  )
+}
+
 export function OverviewPage() {
   const snapshot = getControlPlaneSnapshot()
   const [diagnostics, setDiagnostics] = useState<DiagnosticReport | null>(null)
   const [diagnosticsError, setDiagnosticsError] = useState('')
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false)
+  const [credential, setCredential] = useState<ConnectionCredential | null>(
+    null,
+  )
+  const [credentialError, setCredentialError] = useState('')
+  const [credentialLoading, setCredentialLoading] = useState(false)
+
+  async function generateCredential() {
+    setCredentialLoading(true)
+    setCredentialError('')
+
+    try {
+      if (snapshot.restNonce === 'development') {
+        setCredential({
+          username: 'admin',
+          basicToken: 'ZGVtbzpkZXZlbG9wbWVudA==',
+          createdAt: new Date().toISOString(),
+          notice: 'Copy this token now. It will not be shown again.',
+        })
+        return
+      }
+      const response = await fetch(snapshot.credentialUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': snapshot.restNonce,
+        },
+        credentials: 'same-origin',
+        body: '{}',
+      })
+      const payload = (await response.json()) as ConnectionCredential & {
+        message?: string
+      }
+      if (!response.ok) {
+        throw new Error(
+          payload.message ??
+            'Credential setup failed (' + response.status + ')',
+        )
+      }
+      setCredential(payload)
+    } catch (error) {
+      setCredentialError(
+        error instanceof Error ? error.message : 'Credential setup failed.',
+      )
+    } finally {
+      setCredentialLoading(false)
+    }
+  }
 
   async function runDiagnostics() {
     setDiagnosticsLoading(true)
@@ -98,8 +196,9 @@ export function OverviewPage() {
         headers: { 'X-WP-Nonce': snapshot.restNonce },
         credentials: 'same-origin',
       })
-      if (!response.ok)
+      if (!response.ok) {
         throw new Error(`Diagnostics failed (${response.status})`)
+      }
       setDiagnostics((await response.json()) as DiagnosticReport)
     } catch (error) {
       setDiagnosticsError(
@@ -114,7 +213,7 @@ export function OverviewPage() {
     <Stack component="main" className="wpcommander-app" gap="xl">
       <PageHeader
         title="WPCommander"
-        description="A safe control plane for ChatGPT to inspect and change WordPress."
+        description="Connect ChatGPT to WordPress, inspect the site, and keep control of every action."
         actions={
           <Group gap="xs">
             <Badge variant="outline">
@@ -135,88 +234,151 @@ export function OverviewPage() {
           </Group>
         }
       />
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+
+      <Group gap="lg" wrap="wrap" className="wpcommander-meta-row">
+        <Text size="sm">
+          <Text component="span" fw={600}>
+            WordPress
+          </Text>{' '}
+          {snapshot.wordpressVersion}
+        </Text>
+        <Text size="sm">
+          <Text component="span" fw={600}>
+            Resources
+          </Text>{' '}
+          11 kinds
+        </Text>
+        <Text size="sm">
+          <Text component="span" fw={600}>
+            Authentication
+          </Text>{' '}
+          Application Password
+        </Text>
+      </Group>
+
+      <Section
+        title="Connect Custom GPT"
+        description="Generate the connection once, then paste the token, Action schema, and instructions into your Custom GPT."
+      >
         <Paper withBorder p="lg">
-          <Stack gap="md">
-            <Group justify="space-between" align="flex-start">
-              <Stack gap={4}>
-                <Text fw={600}>Control plane</Text>
+          <Stack gap="lg">
+            <Group justify="space-between" align="flex-start" wrap="wrap">
+              <Stack gap={3}>
+                <Text fw={600}>Connection setup</Text>
                 <Text c="dimmed" size="sm">
-                  {snapshot.connectionMessage}
+                  WPCommander generates everything for this WordPress site. No
+                  manual Application Password setup is required.
                 </Text>
               </Stack>
               <Badge variant="outline">
-                WordPress {snapshot.wordpressVersion}
+                {snapshot.connectionCredentialExists || credential
+                  ? 'Credential ready'
+                  : 'Not connected'}
               </Badge>
             </Group>
-            <Group gap="xs">
-              <Badge variant="light">Abilities API</Badge>
-              <Badge variant="light">Application Passwords</Badge>
-              <Badge variant="light">Plan → apply</Badge>
-            </Group>
-          </Stack>
-        </Paper>
 
-        <Paper withBorder p="lg">
-          <Stack gap="sm">
-            <Text fw={600}>Action schema</Text>
-            <Text c="dimmed" size="sm">
-              Import this URL in your Custom GPT Action. Use Basic auth with a
-              dedicated WordPress Application Password.
+            <Divider />
+
+            <Stack gap="sm">
+              <Group justify="space-between" align="flex-start" wrap="wrap">
+                <Stack gap={3}>
+                  <Text fw={600}>1. Create connection token</Text>
+                  <Text c="dimmed" size="sm">
+                    Creates a dedicated WordPress Application Password for your
+                    current account and prepares the Basic token required by GPT
+                    Actions.
+                  </Text>
+                </Stack>
+                <Button
+                  onClick={generateCredential}
+                  loading={credentialLoading}
+                  disabled={!snapshot.applicationPasswordSupported}
+                >
+                  {snapshot.connectionCredentialExists || credential
+                    ? 'Regenerate token'
+                    : 'Generate connection token'}
+                </Button>
+              </Group>
+              {snapshot.connectionCredentialExists && !credential ? (
+                <Text c="dimmed" size="sm">
+                  A WPCommander credential already exists. Regenerating it
+                  revokes the previous token, so update the GPT immediately.
+                </Text>
+              ) : null}
+              {credentialError ? (
+                <Text c="red.8" size="sm">
+                  {credentialError}
+                </Text>
+              ) : null}
+              {credential ? (
+                <Paper withBorder p="md">
+                  <Stack gap="sm">
+                    <Text size="sm">
+                      WordPress user: <Code>{credential.username}</Code>
+                    </Text>
+                    <Text c="dimmed" size="sm">
+                      In the GPT Action editor choose Authentication → API key →
+                      Basic. Copy this token now; WPCommander does not store the
+                      plaintext credential.
+                    </Text>
+                    <CopyButton value={credential.basicToken}>
+                      {({ copied, copy }) => (
+                        <Button variant="default" onClick={copy}>
+                          {copied ? 'Token copied' : 'Copy Basic auth token'}
+                        </Button>
+                      )}
+                    </CopyButton>
+                  </Stack>
+                </Paper>
+              ) : null}
+            </Stack>
+
+            <Divider />
+
+            <SetupCopyItem
+              title="2. Copy Action schema"
+              description="Paste this JSON directly into the Custom GPT Action editor. Direct paste avoids URL-import, redirect, cache, and encoding issues."
+              value={snapshot.schemaText}
+              copyLabel="Copy Action schema"
+              detailLabel="View Action schema"
+            />
+
+            <Divider />
+
+            <SetupCopyItem
+              title="3. Copy GPT instructions"
+              description="Paste these instructions into the GPT Instructions field so it knows how to search, inspect, use Abilities, and respect the current access mode."
+              value={snapshot.customGptInstructions}
+              copyLabel="Copy GPT instructions"
+              detailLabel="View GPT instructions"
+            />
+
+            <Text c="dimmed" size="xs">
+              Optional schema URL: <Code>{snapshot.schemaUrl}</Code>
             </Text>
-            <Group gap="xs" align="center" wrap="nowrap">
-              <Code block className="wpcommander-schema">
-                {snapshot.schemaUrl}
-              </Code>
-              <CopyButton value={snapshot.schemaUrl}>
-                {({ copied, copy }) => (
-                  <Button variant="default" onClick={copy}>
-                    {copied ? 'Copied' : 'Copy URL'}
-                  </Button>
-                )}
-              </CopyButton>
-            </Group>
           </Stack>
-        </Paper>
-      </SimpleGrid>
-
-      <Section
-        title="Connect ChatGPT"
-        description="Three steps, using WordPress-native authentication."
-      >
-        <Paper withBorder p="lg">
-          <List spacing="sm" type="ordered">
-            <List.Item>
-              Create a dedicated Application Password for the WordPress
-              administrator account.
-            </List.Item>
-            <List.Item>
-              Import the Action schema URL into the Custom GPT editor.
-            </List.Item>
-            <List.Item>
-              Choose Basic authentication and enter the WordPress username plus
-              Application Password.
-            </List.Item>
-          </List>
         </Paper>
       </Section>
 
       <Section
         title="Production access test"
-        description="Check real WordPress access without changing production data."
+        description="Verify what WPCommander can read on this site without changing production data."
       >
         <Paper withBorder p="lg">
           <Stack gap="md">
             <Group justify="space-between" align="flex-start" wrap="wrap">
-              <Stack gap="xs">
+              <Stack gap={3}>
                 <Text fw={600}>Read-only diagnostics</Text>
                 <Text c="dimmed" size="sm">
-                  Performs real search + inspect probes across 11 WordPress
-                  resource kinds plus exposed Abilities. Write abilities stay
-                  blocked.
+                  Runs real search → inspect probes across all 11 resource kinds
+                  plus exposed WordPress Abilities.
                 </Text>
               </Stack>
-              <Button onClick={runDiagnostics} loading={diagnosticsLoading}>
+              <Button
+                onClick={runDiagnostics}
+                loading={diagnosticsLoading}
+                variant="default"
+              >
                 Run access test
               </Button>
             </Group>
@@ -229,34 +391,80 @@ export function OverviewPage() {
 
             {diagnostics ? (
               <Stack gap="md">
-                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-                  {diagnostics.checks.map((check) => (
-                    <Paper withBorder p="md" key={check.id}>
-                      <Group
-                        justify="space-between"
-                        align="flex-start"
-                        wrap="nowrap"
-                      >
-                        <Stack gap={4}>
+                <Table
+                  visibleFrom="sm"
+                  verticalSpacing="sm"
+                  horizontalSpacing="md"
+                >
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Resource</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Sample address</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {diagnostics.checks.map((check) => (
+                      <Table.Tr key={check.id}>
+                        <Table.Td>
+                          <Stack gap={2}>
+                            <Text size="sm" fw={600}>
+                              {check.label}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {check.detail}
+                            </Text>
+                          </Stack>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge
+                            color={diagnosticTone[check.status].color}
+                            c={diagnosticTone[check.status].foreground}
+                            variant="filled"
+                          >
+                            {check.status}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          {check.address ? <Code>{check.address}</Code> : '—'}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+
+                <Stack hiddenFrom="sm" gap={0}>
+                  {diagnostics.checks.map((check, index) => (
+                    <Box key={check.id}>
+                      <Stack gap={4} py="sm">
+                        <Group
+                          justify="space-between"
+                          align="flex-start"
+                          wrap="nowrap"
+                        >
                           <Text fw={600} size="sm">
                             {check.label}
                           </Text>
-                          <Text c="dimmed" size="sm">
-                            {check.detail}
-                          </Text>
-                          {check.address ? <Code>{check.address}</Code> : null}
-                        </Stack>
-                        <Badge
-                          color={diagnosticTone[check.status].color}
-                          c={diagnosticTone[check.status].foreground}
-                          variant="filled"
-                        >
-                          {check.status}
-                        </Badge>
-                      </Group>
-                    </Paper>
+                          <Badge
+                            color={diagnosticTone[check.status].color}
+                            c={diagnosticTone[check.status].foreground}
+                            variant="filled"
+                          >
+                            {check.status}
+                          </Badge>
+                        </Group>
+                        <Text c="dimmed" size="sm">
+                          {check.detail}
+                        </Text>
+                        {check.address ? <Code>{check.address}</Code> : null}
+                      </Stack>
+                      {index < diagnostics.checks.length - 1 ? (
+                        <Divider />
+                      ) : null}
+                    </Box>
                   ))}
-                </SimpleGrid>
+                </Stack>
+
                 <CopyButton value={JSON.stringify(diagnostics, null, 2)}>
                   {({ copied, copy }) => (
                     <Button variant="default" onClick={copy}>
@@ -274,12 +482,25 @@ export function OverviewPage() {
         title="Capabilities"
         description="The GPT discovers capabilities at runtime instead of relying on vendor-specific adapters."
       >
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-          {snapshot.capabilities.map((capability) => (
-            <Paper withBorder p="lg" key={capability.id}>
-              <Stack gap="xs">
-                <Group justify="space-between" align="flex-start">
-                  <Text fw={600}>{capability.label}</Text>
+        <Paper withBorder>
+          <Stack gap={0}>
+            {snapshot.capabilities.map((capability, index) => (
+              <Box key={capability.id}>
+                <Group
+                  justify="space-between"
+                  align="flex-start"
+                  p="md"
+                  wrap="nowrap"
+                >
+                  <Stack gap={3}>
+                    <Text fw={600}>{capability.label}</Text>
+                    <Text c="dimmed" size="sm">
+                      {capability.description}
+                    </Text>
+                    <Text c="dimmed" size="xs">
+                      Source: {capability.source}
+                    </Text>
+                  </Stack>
                   <Badge
                     variant="filled"
                     color={
@@ -290,16 +511,11 @@ export function OverviewPage() {
                     {capability.access}
                   </Badge>
                 </Group>
-                <Text c="dimmed" size="sm">
-                  {capability.description}
-                </Text>
-                <Text c="dimmed" size="xs">
-                  Source: {capability.source}
-                </Text>
-              </Stack>
-            </Paper>
-          ))}
-        </SimpleGrid>
+                {index < snapshot.capabilities.length - 1 ? <Divider /> : null}
+              </Box>
+            ))}
+          </Stack>
+        </Paper>
       </Section>
 
       <Section

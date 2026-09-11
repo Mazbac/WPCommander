@@ -32,9 +32,11 @@ The production build writes deterministic assets under `dist/assets/` for the pl
 
 ## Current WordPress surface
 
-- `GET /wp-json/wpcommander/v1/openapi` — public Action schema; contains no site secrets.
-- `GET /wp-json/wpcommander/v1/manifest` — authenticated readiness metadata.
-- `GET /wp-json/wpcommander/v1/abilities` — authenticated exposed Ability discovery.
-- `POST /wp-json/wpcommander/v1/abilities/execute` — executes one exposed Ability as the authenticated WordPress user.
+- `GET /wp-json/wpcommander/v1/openapi` — public compact Action schema; contains no site secrets.
+- `GET /wp-json/wpcommander/v1/manifest` — authenticated readiness and access-mode metadata.
+- `POST /wp-json/wpcommander/v1/resources/search` — bounded generic resource discovery.
+- `POST /wp-json/wpcommander/v1/resources/inspect` — bounded/redacted resource or JSON Pointer inspection.
+- `POST /wp-json/wpcommander/v1/resources/search-values` — search inside structured builder/theme data.
+- `GET /wp-json/wpcommander/v1/abilities` and `POST /abilities/execute` — dynamic WordPress Ability discovery/execution.
 
-Configure the Custom GPT Action with the OpenAPI URL and Basic authentication using a dedicated WordPress Application Password. The normal WordPress account password should never be entered into the GPT Action configuration.
+The wp-admin setup flow can create/rotate a dedicated WordPress Application Password for the current administrator, returns the Base64 Basic token once, and provides copy-ready Action schema + Custom GPT instructions. Direct schema paste is the default setup path; URL import remains optional. The normal WordPress account password is never requested by WPCommander.

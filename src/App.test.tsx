@@ -13,8 +13,15 @@ describe('WPCommander overview', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'WPCommander' })).toBeVisible()
-    expect(screen.getByText('Control plane')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Copy URL' })).toBeVisible()
-    expect(screen.getByText('Connect ChatGPT')).toBeVisible()
+    expect(screen.getByText('Connect Custom GPT')).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Generate connection token' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Copy Action schema' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Copy GPT instructions' }),
+    ).toBeVisible()
   })
 })

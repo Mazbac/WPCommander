@@ -7,10 +7,22 @@ test('overview is usable and has no detectable accessibility violations', async 
   await page.goto('/')
 
   await expect(page.getByRole('heading', { name: 'WPCommander' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Copy URL' })).toBeEnabled()
-  await expect(page.getByText('Connect ChatGPT')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Generate connection token' }),
+  ).toBeEnabled()
+  await expect(page.getByText('Connect Custom GPT')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Copy Action schema' }),
+  ).toBeEnabled()
+  await expect(
+    page.getByRole('button', { name: 'Copy GPT instructions' }),
+  ).toBeEnabled()
+  await page.getByRole('button', { name: 'Generate connection token' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Copy Basic auth token' }),
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Run access test' }).click()
-  await expect(page.getByText('Posts and pages')).toBeVisible()
+  await expect(page.getByText('Posts and pages').first()).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Copy diagnostic report' }),
   ).toBeVisible()

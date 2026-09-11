@@ -14,6 +14,7 @@
 - [x] Add the WordPress-native WPCommander admin surface with connection, capabilities, diagnostics, and activity views.
 - [x] Expose a generated OpenAPI document and readiness/manifest endpoint.
 - [x] Register WPCommander abilities and discover already-registered WordPress Abilities.
+- [x] Add copy-ready Custom GPT setup: one-click Application Password/Basic token, pasted Action schema, and recommended GPT instructions.
 
 ### Epic: Universal read
 

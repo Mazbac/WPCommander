@@ -25,3 +25,29 @@
   flex: 1;
   overflow-wrap: anywhere;
 }
+
+.wpcommander-meta-row {
+  padding-block: var(--mantine-spacing-xs);
+}
+
+.wpcommander-details {
+  padding-top: var(--mantine-spacing-xs);
+}
+
+.wpcommander-details-summary {
+  cursor: pointer;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+
+.wpcommander-code-preview {
+  margin-top: var(--mantine-spacing-sm);
+  max-height: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wpcommander-app .mantine-Badge-root {
+  flex-shrink: 0;
+}
