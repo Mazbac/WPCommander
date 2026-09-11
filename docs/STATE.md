@@ -6,7 +6,7 @@
 - Epic: Custom GPT connection -> safe change
 - Feature: low-friction GPT Actions setup on top of universal read
 - Branch: `feat/control-plane-foundation`
-- Release candidate: `0.1.4`
+- Release candidate: `0.1.5`
 - Live production site validated 0.1.2 search -> inspect for post, post-meta/Elementor, option, media, term, user, menu, plugin, theme, and site; comments had no sample object.
 
 ## Working
@@ -17,18 +17,19 @@
 - Production defaults to read-only; non-readonly Abilities are rejected.
 - WPCommander can explicitly create/rotate a dedicated Application Password for the current administrator and returns a Base64 Basic token once for GPT Actions.
 - wp-admin provides copy-ready site-specific Action schema and recommended Custom GPT instructions; direct paste is the default setup path.
-- The generated OpenAPI now satisfies the stricter Custom GPT Actions object-schema validator by giving every exposed object schema `properties` and emitting `components.schemas` as an object.
+- The generated OpenAPI satisfies the stricter Custom GPT Actions object-schema validator by giving every exposed object schema `properties` and emitting `components.schemas` as an object.
+- Production diagnostics include a ChatGPT-style public-edge probe using `ChatGPT-User/1.0`, so host/CDN/WAF bot blocks are visible before Action testing.
 
 ## Verification
 
-- `npm run verify:full` passes for 0.1.4: formatting, lint, TypeScript, UI conformance, unit tests, production build, Playwright/axe, and visual regression.
+- `npm run verify:full` passes for 0.1.5: formatting, lint, TypeScript, UI conformance, unit tests, production build, Playwright/axe, and visual regression.
 - The intentionally changed native WordPress-style desktop/mobile layouts were manually inspected before refreshing the visual baselines.
 - PHP files parse successfully with `php-parser`; the workstation still has no native PHP/WordPress runtime.
 - Live WordPress runtime validation is still required for one-click Application Password generation, authenticated GPT Actions, and the targeted REST BOM cleanup.
 
 ## Next
 
-1. Install 0.1.4 on the live site. Generate a connection token and paste the generated schema/instructions into a private Custom GPT Action.
+1. Install 0.1.5 on the live site. Generate a connection token and paste the generated schema/instructions into a private Custom GPT Action.
 2. Test real authenticated Action calls: manifest -> resource search -> inspect -> structured-value search -> Ability discovery/execution.
 3. Confirm the WPCommander REST response cleanup removes the site's global UTF-8 BOM for WPCommander routes; URL import is secondary regardless.
 4. Build plan -> apply -> verify -> audit -> revert for structured resources.
@@ -37,6 +38,7 @@
 ## Known issues
 
 - The live site currently emits a UTF-8 BOM before all WordPress REST JSON responses; this likely explains unreliable schema URL import. 0.1.3 adds targeted output-buffer cleanup for WPCommander routes and defaults setup to direct schema paste.
+- The live TransIP web edge currently returns a raw nginx 403 for requests with `ChatGPT-User/1.0`, including the homepage, so Custom GPT Actions cannot reach WordPress until that host-level bot rule is allowlisted or bypassed.
 - Generic resource writes are not implemented yet.
 - Privileged developer-plane access is architecture-only.
 - Comments legitimately warn when the site has no readable comment sample.

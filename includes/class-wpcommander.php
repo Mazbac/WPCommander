@@ -593,6 +593,8 @@ final class WPCommander {
 			'detail' => sprintf( __( '%d abilities are exposed to external clients.', 'wpcommander' ), $exposed ),
 		);
 
+		$checks[] = $this->probe_chatgpt_reachability();
+
 		return array(
 			'generatedAt'   => gmdate( 'c' ),
 			'accessMode'    => $this->is_read_only_mode() ? 'read-only' : 'write-enabled',
@@ -601,6 +603,24 @@ final class WPCommander {
 		);
 	}
 
+	private function probe_chatgpt_reachability(): array {
+		$response = wp_remote_get( rest_url( 'wpcommander/v1/openapi' ), array(
+			'timeout'     => 10,
+			'redirection' => 0,
+			'user-agent'  => 'ChatGPT-User/1.0',
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			return array( 'id' => 'chatgpt-reachability', 'label' => __( 'ChatGPT reachability', 'wpcommander' ), 'status' => 'warning', 'detail' => sprintf( __( 'External-style ChatGPT probe failed: %s', 'wpcommander' ), $response->get_error_message() ) );
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 === $status ) {
+			return array( 'id' => 'chatgpt-reachability', 'label' => __( 'ChatGPT reachability', 'wpcommander' ), 'status' => 'ok', 'detail' => __( 'A ChatGPT-style request reaches WPCommander through the public web edge.', 'wpcommander' ) );
+		}
+
+		return array( 'id' => 'chatgpt-reachability', 'label' => __( 'ChatGPT reachability', 'wpcommander' ), 'status' => 'warning', 'detail' => sprintf( __( 'The public web edge returned HTTP %d to ChatGPT-User/1.0 before setup could be verified. Allow ChatGPT traffic to /wp-json/wpcommander/v1/* in the host, CDN, or WAF.', 'wpcommander' ), $status ) );
+	}
 	public function get_abilities_data(): array {
 		$abilities = wp_get_abilities();
 		ksort( $abilities );
