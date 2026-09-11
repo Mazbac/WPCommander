@@ -1,0 +1,54 @@
+{
+  "name": "ai-project-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty false",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test tests/e2e",
+    "test:visual": "playwright test tests/visual",
+    "ui:check": "node scripts/ui-check.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run ui:check && npm run test && npm run build",
+    "verify:full": "npm run verify && npm run test:e2e && npm run test:visual",
+    "test:visual:update": "playwright test tests/visual --update-snapshots"
+  },
+  "dependencies": {
+    "@mantine/core": "^9.6.1",
+    "@mantine/hooks": "^9.6.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.0.1",
+    "oxlint": "^1.81.0",
+    "postcss": "^8.5.28",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
+    "prettier": "^3.9.6",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0"
+  },
+  "description": "AI-native starter for fast, standards-led product development",
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
