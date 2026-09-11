@@ -677,16 +677,21 @@ INSTRUCTIONS;
 		$search_schema = $this->get_resource_search_schema();
 		$search_schema['required'] = array( 'kind' );
 
+		$freeform_object_schema = array(
+			'type'                 => 'object',
+			'properties'           => new stdClass(),
+			'additionalProperties' => true,
+		);
 		$object_response = array(
 			'200' => array(
 				'description' => 'Successful response',
-				'content'     => array( 'application/json' => array( 'schema' => array( 'type' => 'object' ) ) ),
+				'content'     => array( 'application/json' => array( 'schema' => $freeform_object_schema ) ),
 			),
 		);
 		$array_response = array(
 			'200' => array(
 				'description' => 'Successful response',
-				'content'     => array( 'application/json' => array( 'schema' => array( 'type' => 'array', 'items' => array( 'type' => 'object' ) ) ) ),
+				'content'     => array( 'application/json' => array( 'schema' => array( 'type' => 'array', 'items' => $freeform_object_schema ) ) ),
 			),
 		);
 
@@ -771,7 +776,7 @@ INSTRUCTIONS;
 										'required'   => array( 'name' ),
 										'properties' => array(
 											'name'  => array( 'type' => 'string', 'description' => 'Namespaced ability name returned by listWordPressAbilities.' ),
-											'input' => array( 'type' => 'object', 'additionalProperties' => true, 'description' => 'Input matching the selected ability inputSchema. Use an empty object when no input is needed.' ),
+											'input' => array( 'type' => 'object', 'properties' => new stdClass(), 'additionalProperties' => true, 'description' => 'Input matching the selected ability inputSchema. Use an empty object when no input is needed.' ),
 										),
 									),
 								),
@@ -782,6 +787,7 @@ INSTRUCTIONS;
 				),
 			),
 			'components' => array(
+				'schemas' => new stdClass(),
 				'securitySchemes' => array(
 					'basicAuth' => array( 'type' => 'http', 'scheme' => 'basic' ),
 				),
