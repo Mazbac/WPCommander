@@ -30,6 +30,14 @@ npm run verify:full
 
 The production build writes deterministic assets under `dist/assets/` for the plugin admin page.
 
+Create an installable WordPress release with:
+
+```bash
+npm run package:plugin
+```
+
+Every archive is validated to contain one fixed top-level `wpcommander/` directory. Keep that internal folder name stable across releases so WordPress replaces the existing plugin instead of installing version-named duplicates.
+
 ## Current WordPress surface
 
 - `GET /wp-json/wpcommander/v1/openapi` — public compact Action schema; contains no site secrets.

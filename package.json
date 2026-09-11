@@ -1,7 +1,7 @@
 {
   "name": "wpcommander",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,8 @@
     "doctor": "node scripts/doctor.mjs",
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run ui:check && npm run test && npm run build",
     "verify:full": "npm run verify && npm run test:e2e && npm run test:visual",
-    "test:visual:update": "playwright test tests/visual --update-snapshots"
+    "test:visual:update": "playwright test tests/visual --update-snapshots",
+    "package:plugin": "node scripts/package-plugin.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.6.1",

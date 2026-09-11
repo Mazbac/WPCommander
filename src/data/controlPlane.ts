@@ -56,13 +56,13 @@ export type ControlPlaneSnapshot = {
 export const developmentControlPlane: ControlPlaneSnapshot = {
   siteName: 'Demo WordPress site',
   wordpressVersion: '7.1',
-  pluginVersion: '0.1.5-dev',
+  pluginVersion: '0.1.6-dev',
   accessMode: 'read-only',
   connectionStatus: 'ready',
   connectionMessage: 'Control plane is ready for a Custom GPT connection.',
   schemaUrl: 'https://example.com/wp-json/wpcommander/v1/openapi',
   schemaText: JSON.stringify(
-    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.5-dev' } },
+    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.6-dev' } },
     null,
     2,
   ),

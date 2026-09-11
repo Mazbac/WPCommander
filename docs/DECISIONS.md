@@ -65,3 +65,7 @@ The admin UI owns the shortest safe setup path: an explicit button creates or ro
 ## 2026-09-11 — D015: Direct schema paste is the default GPT Actions setup
 
 WPCommander keeps its Action schema compact and presents it directly in wp-admin for copy/paste. URL import remains optional because hosting layers, redirects, caching, WAFs, or response encoding can make import less reliable. The schema exposes typed generic resource operations plus Ability discovery/execution rather than one endpoint per vendor.
+
+## 2026-09-11 — D016: WordPress release folder is always `wpcommander/`
+
+Every installable release archive contains exactly one fixed top-level `wpcommander/` directory with `wpcommander.php` beneath it. Version numbers belong in plugin metadata and the archive filename, never in the installed directory name. This preserves the canonical plugin identity `wpcommander/wpcommander.php` so manual uploads replace the existing installation instead of creating duplicates.
