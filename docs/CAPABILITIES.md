@@ -23,13 +23,14 @@
 - Search resources by human text plus optional kind/field filters.
 - Inspect a resource with a bounded, redacted structured representation.
 - Inspect bounded plugin/theme/core source, REST routes, and WordPress-prefix database structure/sample rows when an unknown plugin needs deeper discovery.
-- Execute a requested structured set/replace/remove command directly with internal preflight, stale-state checks, result verification, and automatic audit capture.
-- Revert an eligible prior change.
+- Execute direct field-set commands for posts, media, terms, and comments plus exact nested set/remove commands for post-meta/options after wp-admin enables command access. JSON Pointer addressing includes builder data such as Elementor settings.
+- Require the fresh `resourceFingerprint` from inspection, verify the result, treat exact retries idempotently, and record bounded reversible activity automatically.
+- Revert an eligible prior change only while its resource still matches the audited after-state.
 
 ## Abuse and failure controls
 
-- Repeated mutation calls must be idempotent or detect already-applied state rather than duplicating a change.
-- A structured mutation fails closed when the target changed after the internal preflight snapshot.
+- Repeated mutation calls detect the already-applied after-state rather than duplicating a change. High-impact core options and secret-like keys/paths are excluded from the normal mutation surface.
+- A structured mutation fails closed when the target changed after inspection. Numeric array elements can be updated in place, but adding/removing array elements is blocked in 0.1.9 so revert remains lossless.
 - Generic/resource/developer inspection must cap result count/value/file size and redact secret-like keys and values.
 - Bounded developer inspection is read-only and restricted to WordPress code roots and WordPress-prefixed tables; arbitrary SQL/PHP/WP-CLI/filesystem mutation is not a generic ability.
 - Permission checks happen on every read/write using the authenticated WordPress user; possession of a connection credential does not bypass WordPress capabilities.

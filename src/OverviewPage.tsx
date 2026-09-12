@@ -162,6 +162,12 @@ export function OverviewPage() {
   )
   const [credentialError, setCredentialError] = useState('')
   const [credentialLoading, setCredentialLoading] = useState(false)
+  const [writesEnabled, setWritesEnabled] = useState(
+    snapshot.structuredWritesEnabled,
+  )
+  const [writeAccessError, setWriteAccessError] = useState('')
+  const [writeAccessLoading, setWriteAccessLoading] = useState(false)
+  const currentAccessMode = writesEnabled ? 'write-enabled' : 'read-only'
 
   async function generateCredential() {
     setCredentialLoading(true)
@@ -205,6 +211,44 @@ export function OverviewPage() {
     }
   }
 
+  async function updateWriteAccess() {
+    const enabled = !writesEnabled
+    setWriteAccessLoading(true)
+    setWriteAccessError('')
+
+    try {
+      if (snapshot.restNonce === 'development') {
+        setWritesEnabled(enabled)
+        return
+      }
+      const response = await fetch(snapshot.writeAccessUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': snapshot.restNonce,
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ enabled }),
+      })
+      const payload = (await response.json()) as {
+        enabled?: boolean
+        message?: string
+      }
+      if (!response.ok || typeof payload.enabled !== 'boolean') {
+        throw new Error(
+          payload.message ?? `Write access update failed (${response.status})`,
+        )
+      }
+      setWritesEnabled(payload.enabled)
+    } catch (error) {
+      setWriteAccessError(
+        error instanceof Error ? error.message : 'Write access update failed.',
+      )
+    } finally {
+      setWriteAccessLoading(false)
+    }
+  }
+
   async function runDiagnostics() {
     setDiagnosticsLoading(true)
     setDiagnosticsError('')
@@ -240,7 +284,7 @@ export function OverviewPage() {
         actions={
           <Group gap="xs">
             <Badge variant="outline">
-              {snapshot.accessMode === 'read-only'
+              {currentAccessMode === 'read-only'
                 ? 'Read-only diagnostics'
                 : 'Writes enabled'}
             </Badge>
@@ -388,6 +432,53 @@ export function OverviewPage() {
               Optional schema URL: <Code>{snapshot.schemaUrl}</Code>
             </Text>
           </Stack>
+        </Paper>
+      </Section>
+
+      <Section
+        title="Command access"
+        description="Choose whether the connected GPT may execute normal structured WordPress edits."
+      >
+        <Paper withBorder p="lg">
+          <Group justify="space-between" align="flex-start" wrap="wrap">
+            <Stack gap={4} maw={700}>
+              <Group gap="xs">
+                <Text fw={600}>Structured writes</Text>
+                <Badge
+                  color={writesEnabled ? 'orange.8' : 'blue.7'}
+                  c="black"
+                  variant="filled"
+                >
+                  {writesEnabled ? 'Enabled' : 'Read-only'}
+                </Badge>
+              </Group>
+              <Text c="dimmed" size="sm">
+                When enabled, normal commands can change posts, post meta,
+                options, media fields, terms, and comments. WPCommander checks
+                fresh state, verifies each write, records activity, and captures
+                reversible before-state automatically.
+              </Text>
+              <Text c="dimmed" size="xs">
+                This does not enable arbitrary plugin write Abilities, PHP,
+                WP-CLI, SQL, or filesystem mutation. Normal GPT edits do not
+                require a separate approval step after this admin gate is on.
+              </Text>
+              {writeAccessError ? (
+                <Text c="red.8" size="sm" role="alert">
+                  {writeAccessError}
+                </Text>
+              ) : null}
+            </Stack>
+            <Button
+              variant={writesEnabled ? 'default' : 'filled'}
+              onClick={updateWriteAccess}
+              loading={writeAccessLoading}
+            >
+              {writesEnabled
+                ? 'Disable structured writes'
+                : 'Enable structured writes'}
+            </Button>
+          </Group>
         </Paper>
       </Section>
 

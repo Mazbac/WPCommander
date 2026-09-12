@@ -73,3 +73,7 @@ Every installable release archive contains exactly one fixed top-level `wpcomman
 ## 2026-09-12 — D017: Readiness uses actual Application Password availability
 
 WPCommander must distinguish technical support from real authentication availability. Connection readiness, credential creation, and diagnostics use WordPress's filtered site/user availability checks so security plugins or site policy cannot produce a false READY state.
+
+## 2026-09-12 — D018: Structured write access is a separate admin gate
+
+Normal structured mutations are disabled by default and can only be enabled from wp-admin with an authenticated WordPress REST nonce. This one-time command-access gate does not enable arbitrary plugin/theme write Abilities or privileged PHP/SQL/WP-CLI/filesystem execution; those remain separate higher-risk surfaces.

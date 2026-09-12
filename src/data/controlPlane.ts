@@ -45,9 +45,12 @@ export type ControlPlaneSnapshot = {
   customGptInstructions: string
   diagnosticsUrl: string
   credentialUrl: string
+  writeAccessUrl: string
+  activityUrl: string
   restNonce: string
   applicationPasswordSupported: boolean
   connectionCredentialExists: boolean
+  structuredWritesEnabled: boolean
   resourceKinds?: string[]
   capabilities: CapabilitySummary[]
   activity: ActivityItem[]
@@ -56,13 +59,13 @@ export type ControlPlaneSnapshot = {
 export const developmentControlPlane: ControlPlaneSnapshot = {
   siteName: 'Demo WordPress site',
   wordpressVersion: '7.1',
-  pluginVersion: '0.1.8-dev',
+  pluginVersion: '0.1.9-dev',
   accessMode: 'read-only',
   connectionStatus: 'ready',
   connectionMessage: 'Control plane is ready for a Custom GPT connection.',
   schemaUrl: 'https://example.com/wp-json/wpcommander/v1/openapi',
   schemaText: JSON.stringify(
-    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.8-dev' } },
+    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.9-dev' } },
     null,
     2,
   ),
@@ -71,9 +74,13 @@ export const developmentControlPlane: ControlPlaneSnapshot = {
   diagnosticsUrl: 'https://example.com/wp-json/wpcommander/v1/diagnostics',
   credentialUrl:
     'https://example.com/wp-json/wpcommander/v1/setup/application-password',
+  writeAccessUrl:
+    'https://example.com/wp-json/wpcommander/v1/settings/write-access',
+  activityUrl: 'https://example.com/wp-json/wpcommander/v1/activity',
   restNonce: 'development',
   applicationPasswordSupported: true,
   connectionCredentialExists: false,
+  structuredWritesEnabled: false,
   resourceKinds: [
     'post',
     'post-meta',
@@ -111,6 +118,14 @@ export const developmentControlPlane: ControlPlaneSnapshot = {
       description:
         'Inspect plugin/theme/core source and database structure without vendor-specific adapters.',
       access: 'read',
+      source: 'WPCommander',
+    },
+    {
+      id: 'mutate',
+      label: 'Change structured site data',
+      description:
+        'Direct structured commands are available after an administrator enables command access.',
+      access: 'write',
       source: 'WPCommander',
     },
     {

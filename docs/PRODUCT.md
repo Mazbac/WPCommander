@@ -23,6 +23,7 @@ WPCommander lets a WordPress administrator control a site through ChatGPT withou
 - Search and inspect WordPress resources without knowing which builder or theme produced them.
 - Inspect bounded plugin/theme/core source, registered runtime surface, and WordPress-prefixed database structure when an unknown plugin cannot be understood from generic resources alone.
 - Execute a normal structured change directly from the user's command while WPCommander performs internal target resolution, capability checks, stale-state protection, and result verification.
+- Keep normal structured write access disabled until an administrator explicitly enables command access in wp-admin; this never unlocks arbitrary plugin write Abilities or privileged execution.
 - Record each applied change automatically with enough before/after state for inspection and safe revert where possible.
 - Require explicit confirmation only for broad, destructive, irreversible, or privileged operations.
 

@@ -26,10 +26,11 @@
 
 ### Epic: Safe change
 
-- [ ] Implement direct structured set, replace, and remove commands with internal preflight/stale checks.
-- [ ] Make repeated mutations idempotent and reject stale target state.
-- [ ] Record activity automatically with reversible payloads where safe.
-- [ ] Implement authorized revert and verify the end-to-end Custom GPT flow.
+- [x] Implement direct structured set/remove commands with internal preflight/stale checks for the first safe resource kinds.
+- [x] Make repeated mutations idempotent and reject stale target state.
+- [x] Record activity automatically with reversible payloads where safe.
+- [x] Implement authorized stale-safe revert.
+- [ ] Live-verify the end-to-end Custom GPT write -> verify -> activity -> revert flow on production.
 
 ## Later
 

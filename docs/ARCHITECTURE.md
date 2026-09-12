@@ -22,7 +22,7 @@ Provider-specific integrations are optional expertise, not required access. Elem
 
 ## External API
 
-The stable ChatGPT Action surface stays compact: manifest/diagnostics, three explicit generic resource operations (search, inspect, search-inside), one bounded developer-inspection operation, dynamic Ability discovery/execution, and later direct mutation/audit/revert operations. Explicit resource/developer operations give the GPT strongly typed generic primitives while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through generic resources, runtime inspection, or Ability discovery rather than one Action endpoint per plugin.
+The stable ChatGPT Action surface stays compact: manifest/diagnostics, three generic resource reads (search, inspect, search-inside), direct structured mutation plus activity/revert, one bounded developer-inspection operation, and dynamic Ability discovery/execution. Explicit resource/developer operations give the GPT strongly typed generic primitives while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through generic resources, runtime inspection, or Ability discovery rather than one Action endpoint per plugin.
 
 ## Authentication and authorization
 
@@ -34,10 +34,10 @@ The stable ChatGPT Action surface stays compact: manifest/diagnostics, three exp
 ## Command execution protocol
 
 - Reads execute directly after authorization.
-- Normal structured writes are direct commands from the user's perspective. Internally WPCommander resolves targets, captures before-state/version, checks authorization and staleness, applies the mutation, verifies the resulting state, and records an audit entry.
+- Normal structured writes are direct commands from the user's perspective. A fresh resource fingerprint from inspection is required; WPCommander checks authorization/staleness, applies the narrow mutation, verifies the resulting state, and records bounded reversible before-state. Structured writes are off by default behind a wp-admin-only gate.
 - Applied changes record actor, timestamp, target, operation, before/after fingerprints, and reversible payload where safe; revert is available as a later command when supported.
 - Explicit confirmation is reserved for broad, destructive, irreversible, or privileged operations rather than every routine edit.
-- Privileged developer operations use a separate risk path because arbitrary PHP/SQL/filesystem actions cannot honestly provide the same automatic rollback guarantees as structured mutations.
+- Structured command access never implies arbitrary plugin/theme write Ability access. Privileged developer operations use a separate risk path because arbitrary PHP/SQL/filesystem actions cannot honestly provide the same automatic rollback guarantees as structured mutations.
 
 ## Boundary rule
 

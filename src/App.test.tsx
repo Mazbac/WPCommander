@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
@@ -28,6 +28,25 @@ describe('WPCommander overview', () => {
     expect(
       screen.getByRole('button', { name: 'Copy GPT instructions' }),
     ).toBeVisible()
+  })
+
+  it('gates structured command access from wp-admin', async () => {
+    render(
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>,
+    )
+
+    const enable = screen.getByRole('button', {
+      name: 'Enable structured writes',
+    })
+    expect(enable).toBeVisible()
+    fireEvent.click(enable)
+
+    expect(
+      await screen.findByRole('button', { name: 'Disable structured writes' }),
+    ).toBeVisible()
+    expect(screen.getByText('Writes enabled')).toBeVisible()
   })
 
   it('explains when Application Password authentication is unavailable', () => {

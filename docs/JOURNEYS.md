@@ -7,9 +7,10 @@
 3. Generate the dedicated WPCommander connection token in the plugin, then copy the Action schema and recommended GPT instructions.
 4. In the Custom GPT editor, add an Action using the pasted schema and the generated Basic authentication token.
 5. Ask the GPT about the site. It calls discovery/search/inspect and explains what it found.
-6. Ask for a normal change such as replacing text, a color, or a nested layout setting. The GPT resolves the target and sends one structured mutation command; WPCommander performs the safety preflight and verification internally.
-7. The GPT reports what changed. WPCommander rejects stale or unauthorized writes and records the change automatically.
-8. Broad, destructive, irreversible, or privileged operations ask for explicit confirmation; the admin can inspect activity and revert an eligible prior change from wp-admin or via the GPT.
+6. When ready to permit normal edits, enable structured command access once in WPCommander wp-admin; this does not enable privileged execution or arbitrary plugin write Abilities.
+7. Ask for a normal change such as replacing text, a color, or a nested layout setting. The GPT resolves the target and sends one structured mutation command; WPCommander performs the safety preflight and verification internally.
+8. The GPT reports what changed. WPCommander rejects stale or unauthorized writes and records the change automatically.
+9. Broad, destructive, irreversible, or privileged operations ask for explicit confirmation; the admin can inspect activity and revert an eligible prior change from wp-admin or via the GPT.
 
 ## Returning use
 

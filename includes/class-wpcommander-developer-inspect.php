@@ -358,7 +358,7 @@ final class WPCommander_Developer_Inspect {
 	private function redact_database_row( array $row ): array {
 		$sensitive_row = false;
 		foreach ( $row as $column => $value ) {
-			if ( is_string( $value ) && $this->is_key_label_column( (string) $column ) && $this->is_sensitive_key( $value ) ) {
+			if ( is_string( $value ) && $this->is_key_label_column( (string) $column ) && ( $this->is_sensitive_key( $value ) || 0 === strpos( $value, 'wpcommander_' ) || 0 === strpos( $value, '_wpcommander_' ) ) ) {
 				$sensitive_row = true;
 				break;
 			}

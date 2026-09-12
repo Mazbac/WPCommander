@@ -59,6 +59,67 @@ for (const marker of [
   }
 }
 
+const mutationsPath = path.join(
+  root,
+  'includes',
+  'class-wpcommander-mutations.php',
+)
+const mutations = await readFile(mutationsPath, 'utf8')
+for (const marker of [
+  'expectedResourceFingerprint',
+  'hash_equals',
+  'verify_change',
+  'rollback_prepared_change',
+  'MAX_REVERSIBLE_BYTES',
+  'is_high_risk_option',
+  'OPTION_ACTIVITY',
+  'wpcommander_array_remove_blocked',
+  'wpcommander_array_append_blocked',
+  'contains_sensitive_keys',
+  'wpcommander_rollback_failed',
+]) {
+  if (!mutations.includes(marker)) {
+    throw new Error(`Structured mutation safety marker missing: ${marker}`)
+  }
+}
+
+for (const pattern of [
+  /\$wpdb->(?:query|insert|update|delete|replace)\s*\(/i,
+  /\b(?:eval|shell_exec|proc_open|passthru|exec|system)\s*\(/i,
+  /\b(?:file_put_contents|unlink|rename|fwrite|mkdir|rmdir)\s*\(/i,
+  /\b(?:activate_plugin|deactivate_plugins|delete_plugins|switch_theme)\s*\(/i,
+]) {
+  if (pattern.test(mutations)) {
+    throw new Error(
+      `Structured mutation surface exceeded its boundary: ${pattern}`,
+    )
+  }
+}
+
+const resources = await readFile(
+  path.join(root, 'includes', 'class-wpcommander-resources.php'),
+  'utf8',
+)
+if (
+  !resources.includes("$value   = $this->redact_value( $loaded['value'] );")
+) {
+  throw new Error(
+    'Resource inspection must redact before applying a JSON Pointer.',
+  )
+}
+
+const core = await readFile(
+  path.join(root, 'includes', 'class-wpcommander.php'),
+  'utf8',
+)
+if (
+  !core.includes(
+    "apply_filters( 'wpcommander_write_abilities_enabled', false )",
+  )
+) {
+  throw new Error('Arbitrary write Abilities must remain disabled by default.')
+}
+
 console.log(
-  `PHP parse + developer read-only contract passed (${phpFiles.length} files).`,
+  `PHP parse + developer/mutation safety contracts passed (${phpFiles.length} files).`,
 )

@@ -61,6 +61,14 @@ final class WPCommander_Resources {
 		return $this->can_access_resource( $input );
 	}
 
+	public function load_for_mutation( array $input ) {
+		return $this->load_resource( $input );
+	}
+
+	public function fingerprint_value( $value ): string {
+		return hash( 'sha256', serialize( $this->normalize_value( $value ) ) );
+	}
+
 	private function can_access_resource( array $input ): bool {
 		$kind = isset( $input['kind'] ) ? (string) $input['kind'] : '';
 		$id   = isset( $input['id'] ) ? (int) $input['id'] : 0;
@@ -138,8 +146,8 @@ final class WPCommander_Resources {
 			return $loaded;
 		}
 
-		$value   = $this->redact_value( $loaded['value'] );
 		$pointer = isset( $input['pointer'] ) ? (string) $input['pointer'] : '';
+		$value   = $this->redact_value( $loaded['value'] );
 		if ( '' !== $pointer ) {
 			$value = $this->read_pointer( $value, $pointer );
 			if ( is_wp_error( $value ) ) {
@@ -150,14 +158,16 @@ final class WPCommander_Resources {
 		$preview = $this->bounded_preview( $value );
 
 		return array(
-			'address'   => $loaded['address'],
-			'kind'      => $loaded['kind'],
-			'encoding'  => $loaded['encoding'],
-			'pointer'   => $pointer,
-			'valueType' => $preview['type'],
-			'value'     => $preview['value'],
-			'truncated' => $preview['truncated'],
-			'hint'      => $preview['truncated']
+			'address'             => $loaded['address'],
+			'kind'                => $loaded['kind'],
+			'encoding'            => $loaded['encoding'],
+			'pointer'             => $pointer,
+			'resourceFingerprint' => $this->fingerprint_value( $loaded['value'] ),
+			'valueFingerprint'    => $this->fingerprint_value( $value ),
+			'valueType'           => $preview['type'],
+			'value'               => $preview['value'],
+			'truncated'           => $preview['truncated'],
+			'hint'                => $preview['truncated']
 				? __( 'Use search-resource-values or inspect a more specific JSON Pointer.', 'wpcommander' )
 				: '',
 		);
@@ -343,7 +353,7 @@ final class WPCommander_Resources {
 		$items = array();
 
 		foreach ( $keys as $key ) {
-			if ( $this->is_sensitive_key( (string) $key ) ) {
+			if ( $this->is_sensitive_key( (string) $key ) || $this->is_internal_option_key( (string) $key ) ) {
 				continue;
 			}
 
@@ -666,7 +676,7 @@ final class WPCommander_Resources {
 	}
 
 	private function load_option( string $key ) {
-		if ( '' === $key || $this->is_sensitive_key( $key ) ) {
+		if ( '' === $key || $this->is_sensitive_key( $key ) || $this->is_internal_option_key( $key ) ) {
 			return new WP_Error( 'wpcommander_resource_not_found', __( 'Option resource is unavailable.', 'wpcommander' ) );
 		}
 
@@ -955,6 +965,10 @@ final class WPCommander_Resources {
 			'/(?:pass(?:word)?|secret|token|api[-_]?key|credential|private[-_]?key|client[-_]?secret|access[-_]?key|license[-_]?key|(?:^|[-_])auth(?:orization)?(?:$|[-_]))/i',
 			$key
 		);
+	}
+
+	private function is_internal_option_key( string $key ): bool {
+		return 0 === strpos( $key, 'wpcommander_' ) || 0 === strpos( $key, '_wpcommander_' );
 	}
 
 	private function read_pointer( $value, string $pointer ) {
