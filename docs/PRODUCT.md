@@ -21,9 +21,10 @@ WPCommander lets a WordPress administrator control a site through ChatGPT withou
 - Connect one Custom GPT to one WordPress site with a revocable WordPress credential and a copy/import-ready OpenAPI schema.
 - Discover what the site can do using WordPress Abilities plus WPCommander generic resource capabilities.
 - Search and inspect WordPress resources without knowing which builder or theme produced them.
-- Preview a structured change before it is applied, including the exact resource and before/after value.
-- Apply an approved change with WordPress capability checks, concurrency protection, and an audit record.
-- Revert a reversible WPCommander change from the activity history.
+- Inspect bounded plugin/theme/core source, registered runtime surface, and WordPress-prefixed database structure when an unknown plugin cannot be understood from generic resources alone.
+- Execute a normal structured change directly from the user's command while WPCommander performs internal target resolution, capability checks, stale-state protection, and result verification.
+- Record each applied change automatically with enough before/after state for inspection and safe revert where possible.
+- Require explicit confirmation only for broad, destructive, irreversible, or privileged operations.
 
 ## Later / non-goals
 
@@ -34,4 +35,4 @@ WPCommander lets a WordPress administrator control a site through ChatGPT withou
 
 ## Success
 
-The first useful version succeeds when a fresh WordPress 6.9+ site can install WPCommander, connect a Custom GPT, let the GPT discover site structure, locate content stored in a post/meta/option, preview a change such as text or a color value, apply it safely, and show/revert the resulting activity without any vendor-specific adapter.
+The first useful version succeeds when a fresh WordPress 6.9+ site can install WPCommander, connect a Custom GPT, discover both normal resources and unknown plugin storage/source without a vendor adapter, execute a requested structured edit directly, verify it, and show/revert the resulting activity.

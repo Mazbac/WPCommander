@@ -7,22 +7,22 @@
 3. Generate the dedicated WPCommander connection token in the plugin, then copy the Action schema and recommended GPT instructions.
 4. In the Custom GPT editor, add an Action using the pasted schema and the generated Basic authentication token.
 5. Ask the GPT about the site. It calls discovery/search/inspect and explains what it found.
-6. Ask for a change such as replacing text or a color. The GPT creates a plan and reports the resolved target plus before/after value.
-7. After approval, the GPT applies the plan. WPCommander rejects stale or unauthorized writes and records the change.
-8. The admin can inspect activity and revert an eligible change from wp-admin or via the GPT.
+6. Ask for a normal change such as replacing text, a color, or a nested layout setting. The GPT resolves the target and sends one structured mutation command; WPCommander performs the safety preflight and verification internally.
+7. The GPT reports what changed. WPCommander rejects stale or unauthorized writes and records the change automatically.
+8. Broad, destructive, irreversible, or privileged operations ask for explicit confirmation; the admin can inspect activity and revert an eligible prior change from wp-admin or via the GPT.
 
 ## Returning use
 
-The normal path is conversational: ask → discover if needed → inspect → plan → apply. Connection setup should not reappear unless the credential is missing/revoked or WordPress compatibility changes.
+The normal path is conversational: ask → discover if needed → inspect → execute → verify. Internal preflight/audit mechanics stay invisible unless something is ambiguous, stale, destructive, or privileged. Connection setup should not reappear unless the credential is missing/revoked or WordPress compatibility changes.
 
 ## Recovery
 
 - Authentication failure: show a clear reconnect path; never ask for the normal WordPress password.
-- Target not found/ambiguous: return bounded candidates and require a more specific target before planning.
-- Stale target: invalidate the plan and make the GPT inspect/re-plan rather than overwriting newer work.
-- Apply failure: leave the target unchanged when possible and return a machine-readable WordPress error.
+- Target not found/ambiguous: return bounded candidates and require a more specific target before executing.
+- Stale target: reject the mutation and make the GPT re-inspect current state rather than overwriting newer work.
+- Mutation failure: leave the target unchanged when possible and return a machine-readable WordPress error.
 - Lost credential: revoke it in the WordPress user profile and create a new dedicated Application Password.
 
 ## Uninstall
 
-Remove WPCommander-owned settings and transient plan data. Preserve user-created WordPress content and audit records unless the admin explicitly chooses deletion.
+Remove WPCommander-owned settings and transient command/preflight data. Preserve user-created WordPress content and audit records unless the admin explicitly chooses deletion.

@@ -38,9 +38,9 @@ WPCommander addresses WordPress resources and structured nested values through s
 
 Custom GPT Actions authenticate as a real WordPress user through a dedicated, revocable WordPress Application Password over Basic auth. WPCommander does not store a second plaintext API key or bypass WordPress capabilities.
 
-## 2026-09-11 — D009: Consequential writes are two-phase and auditable
+## 2026-09-11 — D009: Normal commands execute directly with internal safeguards
 
-A write is planned against a captured target state and applied only with a valid non-stale plan. Applied changes record enough safe information for inspection and, where possible, authorized revert.
+WPCommander is a commander, not a user-facing plan/apply workflow. Normal structured changes execute from one user command after an internal preflight captures target state, permissions, and concurrency evidence; WPCommander verifies the result and records an audit/revert trail automatically. Explicit confirmation is reserved for broad, destructive, irreversible, or privileged operations.
 
 ## 2026-09-11 — D010: WordPress owns the admin shell
 
@@ -52,11 +52,11 @@ The control plane defaults to read-only diagnostics mode while the mutation engi
 
 ## 2026-09-11 — D012: Universal access uses layered control primitives
 
-WPCommander must be capable of reaching the whole WordPress installation without requiring a dedicated adapter for every plugin or builder. The architecture therefore combines structured resources, native WordPress Abilities, and an opt-in privileged developer plane for PHP, WP-CLI, database, and filesystem operations. Provider-specific integrations improve semantics and ergonomics but are never the only route to underlying data.
+WPCommander must be capable of reaching the whole WordPress installation without requiring a dedicated adapter for every plugin or builder. The architecture combines structured resources, native WordPress Abilities, bounded read-only source/runtime/database inspection, and an opt-in privileged execution plane for arbitrary PHP, WP-CLI, SQL, and filesystem mutation. Provider-specific integrations improve semantics and ergonomics but are never the only route to underlying data.
 
-## 2026-09-11 — D013: Privileged developer access is explicitly gated
+## 2026-09-11 — D013: Privileged developer execution is explicitly gated
 
-Arbitrary PHP, SQL, WP-CLI, and filesystem mutation are fundamentally higher-risk than structured WordPress changes. They remain disabled on production by default and require an explicit privileged feature gate. Structured production writes keep the plan/apply/stale-check/audit/revert workflow; privileged operations use separate warnings and cannot claim universal automatic rollback.
+Arbitrary PHP, SQL, WP-CLI, and filesystem mutation are fundamentally higher-risk than bounded inspection or structured WordPress changes. They remain disabled on production by default and require an explicit privileged feature gate. Normal structured writes execute directly with internal preflight/stale checks/verification/audit; privileged operations use separate warnings and cannot claim universal automatic rollback.
 
 ## 2026-09-11 — D014: Custom GPT setup is generated inside WPCommander
 

@@ -11,17 +11,18 @@ WPCommander is a WordPress plugin with a small React admin application and a sta
 
 ## Universal control model
 
-WPCommander has three complementary control layers. The goal is broad WordPress control without an endless catalog of vendor adapters.
+WPCommander has complementary control layers. The goal is broad WordPress control without an endless catalog of vendor adapters.
 
 1. **Structured resource plane** — safe, introspectable access to posts, post meta, options, terms, media, users where permitted, and nested structured values through stable addresses and JSON Pointer paths.
 2. **Native ability plane** — discover and execute permission-aware WordPress Abilities registered by core, plugins, themes, and WPCommander itself.
-3. **Privileged developer plane** — opt-in escape-hatch abilities for runtime PHP, WP-CLI, database operations, and filesystem inspection/editing when structured resources and native abilities cannot express the task.
+3. **Developer inspection plane** — bounded read-only inspection of plugin/theme/core source, registered runtime surface, and WordPress-prefixed database structure/sample rows so an unknown plugin can be understood without a prebuilt adapter. Secret-like files, fields, and values are denied or redacted.
+4. **Privileged execution plane** — opt-in escape-hatch abilities for arbitrary PHP, WP-CLI, SQL, and filesystem mutation when the narrower planes cannot express the requested operation.
 
 Provider-specific integrations are optional expertise, not required access. Elementor, Bricks, WooCommerce, ACF, or a future plugin should remain reachable through the generic planes even when WPCommander has no dedicated adapter.
 
 ## External API
 
-The stable ChatGPT Action surface stays compact: manifest/diagnostics, three explicit generic resource operations (search, inspect, search-inside), dynamic Ability discovery/execution, and later mutation/audit operations. Explicit resource operations give the GPT strongly typed arguments while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through resources or Ability discovery rather than one Action endpoint per plugin.
+The stable ChatGPT Action surface stays compact: manifest/diagnostics, three explicit generic resource operations (search, inspect, search-inside), one bounded developer-inspection operation, dynamic Ability discovery/execution, and later direct mutation/audit/revert operations. Explicit resource/developer operations give the GPT strongly typed generic primitives while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through generic resources, runtime inspection, or Ability discovery rather than one Action endpoint per plugin.
 
 ## Authentication and authorization
 
@@ -30,14 +31,14 @@ The stable ChatGPT Action surface stays compact: manifest/diagnostics, three exp
 - Sensitive options/meta are denied by default; credentials, salts, sessions, and secret-like values are never returned by generic discovery.
 - Privileged developer abilities require an additional explicit feature gate. They are disabled on production by default and are never implied by possession of an Application Password alone.
 
-## Mutation protocol
+## Command execution protocol
 
-- Reads may execute directly after authorization.
-- Structured writes are two phase: `plan` resolves targets and captures before-state/version; `apply` references that plan and rejects stale state.
-- Applied changes record actor, timestamp, target, operation, before/after fingerprints, and reversible payload where safe.
-- Revert is another authorized mutation.
+- Reads execute directly after authorization.
+- Normal structured writes are direct commands from the user's perspective. Internally WPCommander resolves targets, captures before-state/version, checks authorization and staleness, applies the mutation, verifies the resulting state, and records an audit entry.
+- Applied changes record actor, timestamp, target, operation, before/after fingerprints, and reversible payload where safe; revert is available as a later command when supported.
+- Explicit confirmation is reserved for broad, destructive, irreversible, or privileged operations rather than every routine edit.
 - Privileged developer operations use a separate risk path because arbitrary PHP/SQL/filesystem actions cannot honestly provide the same automatic rollback guarantees as structured mutations.
 
 ## Boundary rule
 
-Prefer structured resources and native Abilities first. Use privileged developer abilities as the universal escape hatch rather than adding endless vendor adapters. Add provider-specific code only when it improves semantics, safety, or ergonomics; it must never be required merely to gain access to that provider's underlying WordPress data.
+Prefer structured resources and native Abilities first, then bounded developer inspection to understand unknown code/storage. Use privileged execution only as the final escape hatch rather than adding endless vendor adapters. Add provider-specific code only when it improves semantics, safety, or ergonomics; it must never be required merely to gain access to that provider's underlying WordPress data.

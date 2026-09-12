@@ -1,7 +1,7 @@
 {
   "name": "wpcommander",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,8 +16,9 @@
     "test:e2e": "playwright test tests/e2e",
     "test:visual": "playwright test tests/visual",
     "ui:check": "node scripts/ui-check.mjs",
+    "php:check": "node scripts/php-check.mjs",
     "doctor": "node scripts/doctor.mjs",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run ui:check && npm run test && npm run build",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run ui:check && npm run php:check && npm run test && npm run build",
     "verify:full": "npm run verify && npm run test:e2e && npm run test:visual",
     "test:visual:update": "playwright test tests/visual --update-snapshots",
     "package:plugin": "node scripts/package-plugin.mjs"
@@ -40,6 +41,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.0.1",
     "oxlint": "^1.81.0",
+    "php-parser": "^3.7.0",
     "postcss": "^8.5.28",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",

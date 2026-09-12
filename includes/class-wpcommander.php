@@ -8,6 +8,7 @@ final class WPCommander {
 	private const CUSTOM_GPT_APP_ID = '3af71671-95c8-4f35-b5b0-3fcdeae460ca';
 	private static $instance = null;
 	private $resources;
+	private $developer;
 
 	public static function instance(): self {
 		if ( null === self::$instance ) {
@@ -19,6 +20,7 @@ final class WPCommander {
 
 	private function __construct() {
 		$this->resources = new WPCommander_Resources();
+		$this->developer = new WPCommander_Developer_Inspect();
 
 		add_action( 'admin_menu', array( $this, 'register_admin_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
@@ -162,6 +164,16 @@ final class WPCommander {
 
 		register_rest_route(
 			'wpcommander/v1',
+			'/developer/inspect',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'rest_developer_inspect' ),
+				'permission_callback' => array( $this->developer, 'can_inspect' ),
+			)
+		);
+
+		register_rest_route(
+			'wpcommander/v1',
 			'/setup/application-password',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -299,6 +311,20 @@ final class WPCommander {
 				'meta'                => $meta,
 			)
 		);
+
+		wp_register_ability(
+			'wpcommander/developer-inspect',
+			array(
+				'label'               => __( 'Inspect WordPress runtime and source', 'wpcommander' ),
+				'description'         => __( 'Inspect plugin/theme/core source files and database structure through bounded read-only primitives when generic resources are not enough.', 'wpcommander' ),
+				'category'            => 'wpcommander-control',
+				'input_schema'        => $this->get_developer_inspect_schema(),
+				'output_schema'       => array( 'type' => 'object' ),
+				'execute_callback'    => array( $this->developer, 'execute' ),
+				'permission_callback' => array( $this->developer, 'can_inspect' ),
+				'meta'                => $meta,
+			)
+		);
 	}
 
 	private function get_resource_selector_properties(): array {
@@ -364,6 +390,27 @@ final class WPCommander {
 		);
 	}
 
+	private function get_developer_inspect_schema(): array {
+		return array(
+			'type'       => 'object',
+			'required'   => array( 'operation' ),
+			'properties' => array(
+				'operation' => array(
+					'type'        => 'string',
+					'enum'        => array( 'inventory', 'list-files', 'read-file', 'search-files', 'list-routes', 'list-tables', 'describe-table', 'sample-table' ),
+					'description' => 'Read-only operation. inventory needs no other field; file operations use root/path; search-files also uses query; list-routes/list-tables may use query; table operations use table.',
+				),
+				'root'      => array( 'type' => 'string', 'enum' => array( 'plugins', 'themes', 'mu-plugins', 'wordpress' ), 'description' => 'Bounded source root for file operations. wordpress excludes wp-content; use the dedicated plugin/theme roots instead.' ),
+				'path'      => array( 'type' => 'string', 'maxLength' => 1000, 'description' => 'Relative path inside the selected root. Use list-files to discover exact paths before reading.' ),
+				'query'     => array( 'type' => 'string', 'maxLength' => 200, 'description' => 'Case-insensitive search text for source files, REST routes, or table names.' ),
+				'table'     => array( 'type' => 'string', 'maxLength' => 191, 'description' => 'Exact WordPress-prefixed table name returned by list-tables.' ),
+				'limit'     => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 250, 'description' => 'Bounded result limit. Database samples are additionally capped server-side.' ),
+				'startLine' => array( 'type' => 'integer', 'minimum' => 1, 'description' => '1-based first line for read-file.' ),
+				'maxLines'  => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 300, 'description' => 'Maximum number of source lines returned by read-file.' ),
+			),
+		);
+	}
+
 	public function can_manage(): bool {
 		return current_user_can( 'manage_options' );
 	}
@@ -407,6 +454,11 @@ final class WPCommander {
 
 	public function rest_search_resource_values( WP_REST_Request $request ) {
 		$result = $this->resources->search_values( (array) $request->get_json_params() );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+	}
+
+	public function rest_developer_inspect( WP_REST_Request $request ) {
+		$result = $this->developer->execute( (array) $request->get_json_params() );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
@@ -532,6 +584,13 @@ final class WPCommander {
 					'source'      => 'WPCommander',
 				),
 				array(
+					'id'          => 'developer-inspect',
+					'label'       => __( 'Inspect source and runtime', 'wpcommander' ),
+					'description' => __( 'Inspect plugin/theme/core source and database structure without vendor-specific adapters.', 'wpcommander' ),
+					'access'      => 'read',
+					'source'      => 'WPCommander',
+				),
+				array(
 					'id'          => 'execute',
 					'label'       => $this->is_read_only_mode() ? __( 'Run read-only abilities', 'wpcommander' ) : __( 'Execute exposed abilities', 'wpcommander' ),
 					'description' => $this->is_read_only_mode()
@@ -603,6 +662,21 @@ final class WPCommander {
 			'status' => 'ok',
 			'detail' => sprintf( __( '%d abilities are exposed to external clients.', 'wpcommander' ), $exposed ),
 		);
+
+		$developer_inventory = $this->developer->execute( array( 'operation' => 'inventory' ) );
+		$checks[] = is_wp_error( $developer_inventory )
+			? array(
+				'id'     => 'developer-inspect',
+				'label'  => __( 'Source and runtime inspection', 'wpcommander' ),
+				'status' => 'warning',
+				'detail' => $developer_inventory->get_error_message(),
+			)
+			: array(
+				'id'     => 'developer-inspect',
+				'label'  => __( 'Source and runtime inspection', 'wpcommander' ),
+				'status' => 'ok',
+				'detail' => sprintf( __( 'Read-only runtime inventory sees %d plugins and %d database tables.', 'wpcommander' ), $developer_inventory['plugins'], $developer_inventory['databaseTableCount'] ),
+			);
 
 		$current_user_id                = get_current_user_id();
 		$application_passwords_available = $current_user_id > 0 && wp_is_application_passwords_available_for_user( $current_user_id );
@@ -691,8 +765,9 @@ WORKFLOW
 1. Use getWPCommanderManifest when you need connection/access-mode context.
 2. For WordPress data, prefer searchWordPressResources -> inspectWordPressResource.
 3. For large structured values such as Elementor JSON, use searchInsideWordPressResource to find exact JSON Pointer paths instead of requesting or restating huge blobs.
-4. If a task is better represented by a registered WordPress Ability, call listWordPressAbilities, choose the narrowest relevant readonly ability, then call executeWordPressAbility with input matching its inputSchema.
-5. Use getWPCommanderDiagnostics only for connection/access troubleshooting, not as a substitute for inspecting the requested resource.
+4. If generic resources do not explain an unknown plugin, theme, storage model, or runtime behavior, use inspectWordPressRuntime to inspect source files and database structure. Prefer source/runtime discovery over assuming a vendor-specific adapter exists.
+5. If a task is better represented by a registered WordPress Ability, call listWordPressAbilities, choose the narrowest relevant readonly ability, then call executeWordPressAbility with input matching its inputSchema.
+6. Use getWPCommanderDiagnostics only for connection/access troubleshooting, not as a substitute for inspecting the requested resource.
 
 RESOURCE RULES
 - Supported resource kinds are post, post-meta, option, media, term, user, comment, menu, plugin, theme, and site.
@@ -703,7 +778,8 @@ RESOURCE RULES
 
 WRITE SAFETY
 - Respect the accessMode returned by WPCommander. If it is read-only, never claim that a change was applied. Explain that the site currently permits inspection only.
-- When structured write operations become available, use plan before apply, summarize the exact targets and intended changes, and only apply a consequential change after the user has clearly requested it. Verify the result after applying and use revert when asked and supported.
+- When structured write operations become available, execute normal requested edits directly through the narrowest structured mutation. WPCommander performs preflight, stale-state protection, verification, audit, and reversible capture internally.
+- Ask for explicit confirmation only when an operation is broad, destructive, irreversible, or privileged. Use revert when the user asks and the prior change is reversible.
 - Never use a broad or privileged operation when a structured resource operation or narrower WordPress Ability can perform the task.
 
 FRESHNESS
@@ -791,6 +867,16 @@ INSTRUCTIONS;
 						'description' => 'Find matching keys or scalar values inside a resource and return exact JSON Pointer paths.',
 						'security'    => $security,
 						'requestBody' => array( 'required' => true, 'content' => array( 'application/json' => array( 'schema' => $this->get_resource_value_search_schema() ) ) ),
+						'responses'   => $object_response,
+					),
+				),
+				'/wp-json/wpcommander/v1/developer/inspect' => array(
+					'post' => array(
+						'operationId' => 'inspectWordPressRuntime',
+						'summary'     => 'Inspect WordPress source, runtime, and database structure',
+						'description' => 'Use when generic resources do not explain an unknown plugin/theme/storage model. Read-only and bounded; secrets and credential-like fields are redacted.',
+						'security'    => $security,
+						'requestBody' => array( 'required' => true, 'content' => array( 'application/json' => array( 'schema' => $this->get_developer_inspect_schema() ) ) ),
 						'responses'   => $object_response,
 					),
 				),

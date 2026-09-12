@@ -28,9 +28,9 @@ const statusTone = {
 } as const
 
 const activityTone = {
-  planned: { color: 'blue.7', foreground: 'black' },
   applied: { color: 'green.8', foreground: 'black' },
   reverted: { color: 'gray.7', foreground: 'white' },
+  failed: { color: 'red.8', foreground: 'white' },
 } as const
 
 const diagnosticTone = {
@@ -92,6 +92,13 @@ const developmentDiagnostics: DiagnosticReport = {
         ? `Search + inspect succeeded for ${address}.`
         : 'Exposed abilities are discoverable.',
     })),
+    {
+      id: 'developer-inspect',
+      label: 'Source and runtime inspection',
+      status: 'ok',
+      detail:
+        'Read-only runtime inventory sees plugin source and database structure.',
+    },
     {
       id: 'application-passwords',
       label: 'Application Password authentication',

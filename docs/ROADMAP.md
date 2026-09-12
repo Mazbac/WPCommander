@@ -6,7 +6,7 @@
 
 - [x] Normalize raw idea into a product contract and explicit non-goals.
 - [x] Classify the product as a high-consequence WordPress integration.
-- [x] Define the install → GPT connection → inspect → plan → apply → revert journey.
+- [x] Define the install → GPT connection → inspect → execute → verify/revert journey.
 
 ### Epic: Control-plane foundation
 
@@ -22,13 +22,13 @@
 - [x] Implement bounded/redacted search and inspect operations with WordPress capability checks.
 - [x] Make generic structured data useful for page-builder/theme storage without vendor-specific adapters.
 - [x] Add production-safe search → inspect diagnostics for every first-class resource kind.
-- [ ] Add privileged developer-plane reads for filesystem, database, WP-CLI, and runtime introspection.
+- [x] Add bounded developer inspection for plugin/theme/core source, REST routes, and WordPress-prefixed database structure/sample rows.
 
 ### Epic: Safe change
 
-- [ ] Implement plan/apply for structured set, replace, and remove operations.
-- [ ] Reject stale plans and duplicate applies.
-- [ ] Record activity with reversible payloads where safe.
+- [ ] Implement direct structured set, replace, and remove commands with internal preflight/stale checks.
+- [ ] Make repeated mutations idempotent and reject stale target state.
+- [ ] Record activity automatically with reversible payloads where safe.
 - [ ] Implement authorized revert and verify the end-to-end Custom GPT flow.
 
 ## Later

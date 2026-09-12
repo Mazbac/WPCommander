@@ -29,7 +29,7 @@ export type ActivityItem = {
   id: string
   action: string
   target: string
-  state: 'planned' | 'applied' | 'reverted'
+  state: 'applied' | 'reverted' | 'failed'
   timestamp: string
 }
 
@@ -56,13 +56,13 @@ export type ControlPlaneSnapshot = {
 export const developmentControlPlane: ControlPlaneSnapshot = {
   siteName: 'Demo WordPress site',
   wordpressVersion: '7.1',
-  pluginVersion: '0.1.7-dev',
+  pluginVersion: '0.1.8-dev',
   accessMode: 'read-only',
   connectionStatus: 'ready',
   connectionMessage: 'Control plane is ready for a Custom GPT connection.',
   schemaUrl: 'https://example.com/wp-json/wpcommander/v1/openapi',
   schemaText: JSON.stringify(
-    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.7-dev' } },
+    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.8-dev' } },
     null,
     2,
   ),
@@ -102,6 +102,14 @@ export const developmentControlPlane: ControlPlaneSnapshot = {
       label: 'Inspect site data',
       description:
         'Search and inspect 11 generic WordPress resource kinds, including builder data, media, users, menus, plugins, themes, and site state.',
+      access: 'read',
+      source: 'WPCommander',
+    },
+    {
+      id: 'developer-inspect',
+      label: 'Inspect source and runtime',
+      description:
+        'Inspect plugin/theme/core source and database structure without vendor-specific adapters.',
       access: 'read',
       source: 'WPCommander',
     },

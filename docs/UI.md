@@ -6,7 +6,7 @@ WPCommander has a small operational admin UI. ChatGPT is the primary conversatio
 
 - `Overview`: connection readiness, site/control-plane status, and the shortest next action.
 - `Capabilities`: what WordPress and WPCommander expose to the connected GPT, with read/write distinction.
-- `Activity`: planned/applied/reverted changes and recovery actions.
+- `Activity`: applied/reverted/failed changes and recovery actions.
 - `Settings`: only configuration that cannot be inferred safely; keep this small.
 
 ## Core rules
@@ -25,7 +25,7 @@ Use a compact status row and one primary WordPress-style connection panel with t
 
 ## States and accessibility
 
-Cover loading, connection-not-configured, auth failure, unsupported WordPress version, no activity, partial capability discovery, stale plan, apply failure, and read-only permission states when applicable. WCAG 2.2 AA, keyboard operation, visible focus, semantic status announcements, responsive/reflow behavior, and safe long-value truncation are baseline requirements.
+Cover loading, connection-not-configured, auth failure, unsupported WordPress version, no activity, partial capability discovery, stale target, mutation failure, and read-only permission states when applicable. WCAG 2.2 AA, keyboard operation, visible focus, semantic status announcements, responsive/reflow behavior, and safe long-value truncation are baseline requirements.
 
 ## Anti-drift
 
