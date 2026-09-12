@@ -207,9 +207,6 @@ final class WPCommander_Resources {
 
 	public function probe_kind( string $kind ): array {
 		$input = array( 'kind' => $kind, 'limit' => 1 );
-		if ( 'post-meta' === $kind ) {
-			$input['query'] = '_elementor_data';
-		}
 		if ( 'option' === $kind ) {
 			$input['query'] = 'blogname';
 		}
@@ -291,9 +288,6 @@ final class WPCommander_Resources {
 	private function search_post_meta( int $post_id, string $query, int $limit ): array {
 		global $wpdb;
 
-		if ( $post_id < 1 && '' === $query ) {
-			return array();
-		}
 
 		$like = '%' . $wpdb->esc_like( $query ) . '%';
 		if ( $post_id > 0 ) {

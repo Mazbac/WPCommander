@@ -4,38 +4,39 @@ WPCommander lets a WordPress administrator control a site through ChatGPT withou
 
 ## Goal
 
-- Problem: WordPress behavior and design are spread across posts, blocks, metadata, options, media, themes, plugins, and vendor-specific storage. Automating each vendor separately does not scale.
-- Target user: a WordPress site owner, builder, or agency operator who is comfortable asking ChatGPT to make site changes.
-- Core successful outcome: the user can ask ChatGPT to find, explain, preview, and safely change site content or configuration through one stable WordPress interface.
-- Why this product should exist: WordPress already has common primitives and a machine-readable Abilities API; WPCommander should expose those foundations instead of recreating every vendor UI.
+- Problem: WordPress behavior and design are spread across posts, metadata, options, media, plugins, themes, custom tables, REST routes, PHP runtime, and files. Automating vendors separately does not scale.
+- Target user: a WordPress site owner, builder, or agency operator who wants to state the desired result and let ChatGPT find and perform the relevant WordPress operation.
+- Core successful outcome: install WPCommander, grant the intended access level, then ask ChatGPT to find, explain, create, change, or remove WordPress state without needing a vendor adapter first.
+- Why this product should exist: WordPress/PHP already exposes common data/runtime primitives. WPCommander should expose those foundations as one deterministic control plane.
 
 ## Product profile
 
-- Surface/distribution: installable WordPress plugin with a small WordPress admin UI and an authenticated REST/OpenAPI interface for Custom GPT Actions.
+- Surface/distribution: installable WordPress plugin with a small operational wp-admin UI and an authenticated REST/OpenAPI interface for ChatGPT clients. Custom GPT Actions are a first-class connection path, not the product architecture.
 - Primary environment: WordPress 6.9+; develop and verify against currently maintained WordPress releases.
-- Risk level: high-consequence because authorized writes can change a production website.
-- Valuable/sensitive assets affected: published content, design data, media, site settings, plugin/theme-owned metadata, and operational configuration.
+- Risk level: high-consequence because authorized writes can materially change a production website.
+- Valuable/sensitive assets affected: published content, design data, media, site settings, plugin/theme-owned state, code, database state, and operational configuration.
 
 ## MVP
 
-- Connect one Custom GPT to one WordPress site with a revocable WordPress credential and a copy/import-ready OpenAPI schema.
-- Discover what the site can do using WordPress Abilities plus WPCommander generic resource capabilities.
-- Search and inspect WordPress resources without knowing which builder or theme produced them.
-- Inspect bounded plugin/theme/core source, registered runtime surface, and WordPress-prefixed database structure when an unknown plugin cannot be understood from generic resources alone.
-- Reach the full WordPress installation through vendor-independent execution primitives: internal REST, loaded PHP callables, WordPress-database SQL, filesystem mutation, and WP-CLI when present.
-- Execute a normal structured change directly from the user's command while WPCommander performs internal target resolution, capability checks, stale-state protection, and result verification.
-- Keep normal structured write access disabled until an administrator explicitly enables command access in wp-admin; this never unlocks arbitrary plugin write Abilities or privileged execution.
-- Record each applied change automatically with enough before/after state for inspection and safe revert where possible.
-- Require explicit confirmation only for broad, destructive, irreversible, or privileged operations.
+- Connect an authorized ChatGPT client to one WordPress site with a revocable WordPress Application Password and a copy-ready OpenAPI schema.
+- Discover and inspect WordPress resources, native Abilities, plugin/theme source/runtime, REST routes, database structure, and filesystem metadata without assuming vendor support.
+- Use one generic control language: Discover/Inspect, Create, Read, Update, Delete, then Execute when ordinary resource CRUD cannot express the requested result.
+- Support multi-field updates to one structured resource in one request so builder/plugin data does not require dozens of network roundtrips.
+- Create from an inspected source resource is the generic way to duplicate WordPress state; it must not become a page-builder or vendor clone adapter.
+- Keep structured operations deterministic with WordPress capability checks, fresh-state fingerprints, verification, idempotent retry, bounded activity, and revert where technically safe.
+- Keep a universal execution fallback for everything WordPress/PHP can legitimately reach through internal REST, loaded callables, PHP, SQL, filesystem operations, and WP-CLI when available.
+- Let risk change the execution path, confirmation, audit, and rollback guarantees; risk must not remove the fundamental control path.
 
-## Later / non-goals
+## Product rules / non-goals
 
-- No endless Elementor-, Divi-, theme-, or plugin-specific adapter catalog. A thin compatibility layer is allowed only when a high-value capability cannot be represented through generic WordPress primitives or a registered Ability.
-- Privileged SQL/filesystem/PHP/WP-CLI execution is not part of the normal structured surface, but it is a required universal escape hatch behind its own explicit administrator gate. Risk changes the execution path, not whether WPCommander can reach the underlying WordPress capability.
-- Credential extraction or secret browsing is never a product goal; privileged execution exists to control the site, not to expose credentials.
-- Multisite fleet management, scheduled automation, and broad media transformation remain later workflow/scale capabilities, not access prerequisites.
+- No Elementor-, WooCommerce-, ACF-, theme-, or plugin-specific adapter catalog. A plugin installed tomorrow must be controllable through generic discovery, CRUD, Abilities, runtime inspection, or Execute without a WPCommander release first.
+- Do not expose implementation history as product UX. The user chooses Inspect only, Edit site, or Full control; internal write/execution gates remain implementation details.
+- Do not invent a plan/apply ceremony. The normal path is ask → discover/inspect if needed → execute → verify/report.
+- Do not ask for repetitive approval when the user's command already clearly requests the privileged result. Ask again only when a broad, destructive, irreversible, or privileged consequence was not reasonably implied.
+- Credential extraction or secret browsing is never a product goal; privileged execution exists to control the site, not expose credentials.
+- Multisite fleet management and scheduled automation are later workflow/scale capabilities, not prerequisites for universal site control.
 - WPCommander is the deterministic WordPress control plane; ChatGPT remains the conversational planner. The plugin does not need its own general-purpose chatbot.
 
 ## Success
 
-The first useful version succeeds when a fresh WordPress 6.9+ site can install WPCommander, connect a Custom GPT, discover both normal resources and unknown plugin storage/source without a vendor adapter, execute a requested change through the narrowest available primitive, fall back to privileged universal execution when necessary, verify what can be verified, and report the resulting activity.
+The product succeeds when a fresh supported WordPress site can install WPCommander, connect ChatGPT, discover an unknown plugin/theme without an adapter, express normal work through generic CRUD, fall back to universal Execute when needed, verify the resulting state, and report activity without making the user understand the implementation layers.

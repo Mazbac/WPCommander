@@ -7,38 +7,49 @@ WPCommander is a WordPress plugin with a small React admin application and a sta
 - WordPress: 6.9+ so the native Abilities API is always available.
 - PHP: follow the minimum supported by the selected WordPress baseline; do not introduce a separate server runtime.
 - Admin UI: React 19 + TypeScript + Mantine 9, built with Vite 8 and npm.
-- Tests: Vitest for UI/unit behavior; Playwright + axe-core for browser/accessibility/visual behavior. Add WordPress/PHP integration coverage as the plugin backend lands.
+- Tests: Vitest for UI/unit behavior; Playwright + axe-core for browser/accessibility/visual behavior. The workstation has no native WordPress runtime, so backend release checks are parser/static-contract plus controlled live acceptance after installation.
 
 ## Universal control model
 
-WPCommander has complementary control layers. The goal is broad WordPress control without an endless catalog of vendor adapters.
+The invariant is: if the authenticated WordPress/PHP process can legitimately inspect or perform something, WPCommander must retain a vendor-independent route to it.
 
-1. **Structured resource plane** — safe, introspectable access to posts, post meta, options, terms, media, users where permitted, and nested structured values through stable addresses and JSON Pointer paths.
-2. **Native ability plane** — discover and execute permission-aware WordPress Abilities registered by core, plugins, themes, and WPCommander itself.
-3. **Developer inspection plane** — bounded read-only inspection of plugin/theme/core source, registered runtime surface, and WordPress-prefixed database structure/sample rows so an unknown plugin can be understood without a prebuilt adapter. Secret-like files, fields, and values are denied or redacted.
-4. **Universal execution plane** — opt-in escape-hatch abilities for arbitrary PHP, WP-CLI, SQL, and filesystem mutation when the narrower planes cannot express the requested operation.
+1. **Structured resource plane** — discover/read and deterministic Create/Update/Delete for supported WordPress resources plus RFC 6901 JSON Pointer updates inside structured post-meta/options.
+2. **Native ability plane** — discover and execute permission-aware WordPress Abilities registered by core, plugins, themes, and WPCommander.
+3. **Developer inspection plane** — bounded read-only inspection of plugin/theme/core source, registered runtime, REST routes, database structure/sample rows, and filesystem metadata so unknown software can be understood without an adapter.
+4. **Universal execution plane** — Full-control fallback through internal REST, loaded PHP callables, bounded PHP/SQL, filesystem mutation, and WP-CLI when a narrower primitive cannot express the result.
 
-Provider-specific integrations are optional expertise, not required access. Elementor, Bricks, WooCommerce, ACF, or a future plugin should remain reachable through the generic planes even when WPCommander has no dedicated adapter.
+There is no provider adapter layer in the required architecture. Elementor, WooCommerce, ACF, a custom plugin, or software installed tomorrow must remain reachable through the same generic planes.
+
+## Machine control language
+
+The stable mental model is **Discover/Inspect → Create/Read/Update/Delete → Execute**.
+
+- Duplication is Create from an inspected source state, not a `cloneVendorThing` operation.
+- Multi-field edits to one resource use one batch Update: prepare all changes in memory, perform the minimum WordPress write(s), verify once, and record one reversible activity entry where safe.
+- Unknown storage is first discovered through generic resource/runtime/database/source inspection; the GPT then uses the narrowest generic write primitive available.
+- Execute is the capability-complete fallback, not a reason to add task-specific endpoints.
 
 ## External API
 
-The stable ChatGPT Action surface stays compact: manifest/diagnostics, three generic resource reads (search, inspect, search-inside), direct structured mutation plus activity/revert, bounded developer inspection, one vendor-independent universal execution operation, and dynamic Ability discovery/execution. Explicit resource/developer operations give the GPT strongly typed generic primitives while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through generic resources, runtime inspection, or Ability discovery rather than one Action endpoint per plugin.
+The ChatGPT/OpenAPI surface stays compact: manifest/diagnostics; resource search, inspect, and search-inside; generic Create, Update, batch Update, Delete; activity/revert; developer inspection; Ability discovery/execution; and one universal Execute operation. Legacy mutation route aliases may remain for compatibility but are not the product vocabulary.
 
-## Authentication and authorization
+## Authentication, access, and authorization
 
-- External GPT access uses WordPress Application Passwords over HTTP Basic authentication. The wp-admin setup action may create/rotate a WPCommander-specific Application Password for the current administrator and returns only a one-time Base64 Basic token; WPCommander never stores the plaintext credential.
-- Every operation runs as the authenticated WordPress user and checks the narrowest applicable capability.
-- Sensitive options/meta are denied by default; credentials, salts, sessions, and secret-like values are never returned by generic discovery.
-- Universal execution requires an additional explicit administrator feature gate. It is disabled by default and is never implied by possession of an Application Password or structured-write access alone.
+- External clients authenticate as real WordPress users through dedicated, revocable WordPress Application Passwords over HTTP Basic. WPCommander does not create a second plaintext API-key system.
+- Every operation checks the authenticated WordPress user's applicable capability; credentials do not bypass WordPress authorization.
+- The admin presents three nested levels: **Inspect only**, **Edit site**, **Full control**. Full control always includes Edit site. Internally the structured-write and universal-execution options may remain separate gates, but contradictory states are normalized away.
+- Sensitive options/meta and credential-like values remain denied/redacted. Universal control is not credential extraction.
 
 ## Command execution protocol
 
 - Reads execute directly after authorization.
-- Normal structured writes are direct commands from the user's perspective. A fresh resource fingerprint from inspection is required; WPCommander checks authorization/staleness, applies the narrow mutation, verifies the resulting state, and records bounded reversible before-state. Structured writes are off by default behind a wp-admin-only gate.
-- Applied changes record actor, timestamp, target, operation, before/after fingerprints, and reversible payload where safe; revert is available as a later command when supported.
-- Explicit confirmation is reserved for broad, destructive, irreversible, or privileged operations rather than every routine edit.
-- Structured command access never implies arbitrary plugin/theme write Ability access. Privileged developer operations use a separate risk path because arbitrary PHP/SQL/filesystem actions cannot honestly provide the same automatic rollback guarantees as structured mutations.
+- Structured Update/Delete requires a fresh resource fingerprint from inspection and fails stale rather than overwriting newer work.
+- Create from an existing resource requires the source's fresh fingerprint. Exact retries are idempotent.
+- Batch Update is one logical command and one activity/revert unit; it must not degrade into a network or storage roundtrip per pointer when one resource write can express the same result.
+- Structured operations verify post-write state and capture bounded before-state for later revert where safe.
+- Universal execution cannot honestly promise the same rollback guarantee; it remains bounded, audited, and followed by explicit state verification.
+- A clear user request can supply operation intent. Additional confirmation is reserved for consequential steps not reasonably implied by that request.
 
 ## Boundary rule
 
-Prefer structured resources and native Abilities first, then bounded developer inspection to understand unknown code/storage. Use universal execution as the final escape hatch rather than adding endless vendor adapters. Risk gates may add confirmation or stronger audit, but may not make a WordPress-accessible subsystem permanently unreachable. Add provider-specific code only when it improves semantics, safety, or ergonomics; it must never be required merely to gain access to that provider's underlying WordPress data.
+Prefer structured CRUD and native Abilities, then bounded inspection to understand unknown code/storage, then universal Execute. Never add a provider-specific adapter merely to gain access to underlying WordPress state. Safety may change method, bounds, confirmation, audit, or revert behavior, but it must not make a WordPress/PHP-accessible subsystem permanently unreachable.

@@ -81,3 +81,11 @@ Normal structured mutations are disabled by default and can only be enabled from
 ## 2026-09-12 — D019: Universal capability is invariant; risk changes flow, not reach
 
 WPCommander must retain a vendor-independent route to every subsystem the WordPress/PHP process can legitimately operate: WordPress APIs, internal REST, loaded PHP callables, the WordPress database, the WordPress filesystem, and WP-CLI when available. New plugins/themes must not require WPCommander adapters to become controllable. Structured primitives remain preferred, while higher-risk operations use a separate administrator gate, confirmation semantics, bounded output, and audit. Security may change how an operation executes, but not remove the fundamental control path.
+
+## 2026-09-12 — D020: Admin access is one nested three-level model
+
+WPCommander presents Inspect only, Edit site, and Full control. Full control always includes normal structured edits. Internal structured-write and universal-execution gates may remain separate implementation controls, but the product must normalize contradictory states and never expose them as independent user concepts.
+
+## 2026-09-12 — D021: Machine control language is generic CRUD plus Execute
+
+The machine-facing control model is Discover/Inspect → Create/Read/Update/Delete → Execute. Duplication is Create from inspected source state; multi-field transforms are batch Update; unknown plugins are discovered through generic resource/runtime/source/database inspection. Provider-specific adapters and task-specific clone/duplicate endpoints are not part of the required architecture. Execute remains the universal fallback for WordPress/PHP-accessible operations that structured CRUD or native Abilities cannot express.

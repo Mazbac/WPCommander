@@ -1,7 +1,7 @@
 {
   "name": "wpcommander",
   "private": true,
-  "version": "0.1.10",
+  "version": "0.1.11",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -50,7 +50,7 @@
     "vite": "^8.3.0",
     "vitest": "^5.0.0"
   },
-  "description": "Safe WordPress control plane for ChatGPT Actions",
+  "description": "Universal WordPress control plane for ChatGPT",
   "engines": {
     "node": ">=24.0.0"
   }

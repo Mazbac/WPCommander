@@ -72,14 +72,14 @@ const developmentDiagnostics: DiagnosticReport = {
   checks: [
     ...[
       ['post', 'Posts and pages', 'post/42'],
-      ['post-meta', 'Post metadata / builders', 'post/42/meta/_elementor_data'],
+      ['post-meta', 'Post metadata / builders', 'post/42/meta/layout_settings'],
       ['option', 'Options and theme settings', 'option/blogname'],
       ['media', 'Media library', 'media/120'],
       ['term', 'Taxonomies and terms', 'term/category/3'],
       ['user', 'Users', 'user/1'],
       ['comment', 'Comments', 'comment/17'],
       ['menu', 'Classic navigation menus', 'menu/4'],
-      ['plugin', 'Plugins', 'plugin/elementor%2Felementor.php'],
+      ['plugin', 'Plugins', 'plugin/sample-plugin%2Fsample-plugin.php'],
       ['theme', 'Themes', 'theme/essentials'],
       ['site', 'Site and environment', 'site'],
       ['abilities', 'WordPress Abilities', undefined],
@@ -165,56 +165,32 @@ export function OverviewPage() {
   const [writesEnabled, setWritesEnabled] = useState(
     snapshot.structuredWritesEnabled,
   )
-  const [writeAccessError, setWriteAccessError] = useState('')
-  const [writeAccessLoading, setWriteAccessLoading] = useState(false)
   const [universalExecutionEnabled, setUniversalExecutionEnabled] = useState(
     snapshot.universalExecutionEnabled,
   )
-  const [universalExecutionError, setUniversalExecutionError] = useState('')
-  const [universalExecutionLoading, setUniversalExecutionLoading] =
-    useState(false)
-  const accessLabel = universalExecutionEnabled
-    ? 'Universal execution enabled'
+  const [accessError, setAccessError] = useState('')
+  const [accessLoading, setAccessLoading] = useState(false)
+  const accessLevel = universalExecutionEnabled
+    ? 'full'
     : writesEnabled
-      ? 'Writes enabled'
-      : 'Read-only diagnostics'
+      ? 'edit'
+      : 'inspect'
+  const accessLabel =
+    accessLevel === 'full'
+      ? 'Full control'
+      : accessLevel === 'edit'
+        ? 'Edit site'
+        : 'Inspect only'
+  const accessDescription =
+    accessLevel === 'full'
+      ? 'ChatGPT may use every WordPress control layer, including plugin/theme internals, database, files, and WP-CLI when available.'
+      : accessLevel === 'edit'
+        ? 'ChatGPT may make normal site edits with fresh-state checks, verification, activity, and safe revert where supported.'
+        : 'ChatGPT may inspect and explain the site, but it cannot change WordPress state.'
   const recentActivity = [
     ...snapshot.activity,
     ...snapshot.executionActivity,
   ].sort((left, right) => right.timestamp.localeCompare(left.timestamp))
-  const currentCapabilities = snapshot.capabilities.map((capability) => {
-    if (capability.id === 'mutate') {
-      return {
-        ...capability,
-        description: writesEnabled
-          ? 'Execute direct structured changes with stale-state checks, verification, audit, and revert capture.'
-          : 'Structured changes are available but disabled until an administrator enables command access.',
-      }
-    }
-    if (capability.id === 'universal-execute') {
-      return {
-        ...capability,
-        description: universalExecutionEnabled
-          ? 'Use vendor-independent internal REST, PHP, SQL, filesystem, WP-CLI, and loaded-callable execution when narrower primitives cannot express the requested change.'
-          : 'Universal execution is available but disabled until an administrator explicitly enables its separate privileged gate.',
-      }
-    }
-    if (capability.id === 'execute') {
-      return {
-        ...capability,
-        label: universalExecutionEnabled
-          ? 'Run WordPress Abilities'
-          : 'Run read-only abilities',
-        description: universalExecutionEnabled
-          ? 'Execute exposed WordPress Abilities, including write Abilities, with privileged confirmation for non-readonly operations.'
-          : 'Execute exposed read-only WordPress Abilities. Write Abilities require the separate universal execution gate.',
-        access: universalExecutionEnabled
-          ? ('write' as const)
-          : ('read' as const),
-      }
-    }
-    return capability
-  })
 
   async function generateCredential() {
     setCredentialLoading(true)
@@ -258,82 +234,59 @@ export function OverviewPage() {
     }
   }
 
-  async function updateWriteAccess() {
-    const enabled = !writesEnabled
-    setWriteAccessLoading(true)
-    setWriteAccessError('')
+  async function updateAccessLevel(target: 'inspect' | 'edit' | 'full') {
+    if (target === accessLevel) return
+
+    setAccessLoading(true)
+    setAccessError('')
 
     try {
       if (snapshot.restNonce === 'development') {
-        setWritesEnabled(enabled)
+        setWritesEnabled(target !== 'inspect')
+        setUniversalExecutionEnabled(target === 'full')
         return
       }
-      const response = await fetch(snapshot.writeAccessUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WP-Nonce': snapshot.restNonce,
+
+      const useUniversalRoute =
+        target === 'full' || (target === 'edit' && accessLevel === 'full')
+      const enabled =
+        target === 'full' || (target === 'edit' && accessLevel !== 'full')
+      const response = await fetch(
+        useUniversalRoute
+          ? snapshot.universalExecutionUrl
+          : snapshot.writeAccessUrl,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': snapshot.restNonce,
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ enabled }),
         },
-        credentials: 'same-origin',
-        body: JSON.stringify({ enabled }),
-      })
+      )
       const payload = (await response.json()) as {
-        enabled?: boolean
+        structuredWritesEnabled?: boolean
+        universalExecutionEnabled?: boolean
         message?: string
       }
-      if (!response.ok || typeof payload.enabled !== 'boolean') {
+      if (
+        !response.ok ||
+        typeof payload.structuredWritesEnabled !== 'boolean' ||
+        typeof payload.universalExecutionEnabled !== 'boolean'
+      ) {
         throw new Error(
-          payload.message ?? `Write access update failed (${response.status})`,
+          payload.message ?? `Access update failed (${response.status})`,
         )
       }
-      setWritesEnabled(payload.enabled)
+      setWritesEnabled(payload.structuredWritesEnabled)
+      setUniversalExecutionEnabled(payload.universalExecutionEnabled)
     } catch (error) {
-      setWriteAccessError(
-        error instanceof Error ? error.message : 'Write access update failed.',
+      setAccessError(
+        error instanceof Error ? error.message : 'Access update failed.',
       )
     } finally {
-      setWriteAccessLoading(false)
-    }
-  }
-
-  async function updateUniversalExecution() {
-    const enabled = !universalExecutionEnabled
-    setUniversalExecutionLoading(true)
-    setUniversalExecutionError('')
-
-    try {
-      if (snapshot.restNonce === 'development') {
-        setUniversalExecutionEnabled(enabled)
-        return
-      }
-      const response = await fetch(snapshot.universalExecutionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WP-Nonce': snapshot.restNonce,
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ enabled }),
-      })
-      const payload = (await response.json()) as {
-        enabled?: boolean
-        message?: string
-      }
-      if (!response.ok || typeof payload.enabled !== 'boolean') {
-        throw new Error(
-          payload.message ??
-            `Universal execution update failed (${response.status})`,
-        )
-      }
-      setUniversalExecutionEnabled(payload.enabled)
-    } catch (error) {
-      setUniversalExecutionError(
-        error instanceof Error
-          ? error.message
-          : 'Universal execution update failed.',
-      )
-    } finally {
-      setUniversalExecutionLoading(false)
+      setAccessLoading(false)
     }
   }
 
@@ -368,7 +321,7 @@ export function OverviewPage() {
     <Stack component="main" className="wpcommander-app" gap="xl">
       <PageHeader
         title="WPCommander"
-        description="Connect ChatGPT to WordPress, inspect the site, and keep control of every action."
+        description="ChatGPT control for this WordPress site."
         actions={
           <Group gap="xs">
             <Badge variant="outline">{accessLabel}</Badge>
@@ -386,39 +339,19 @@ export function OverviewPage() {
         }
       />
 
-      <Group gap="lg" wrap="wrap" className="wpcommander-meta-row">
-        <Text size="sm">
-          <Text component="span" fw={600}>
-            WordPress
-          </Text>{' '}
-          {snapshot.wordpressVersion}
-        </Text>
-        <Text size="sm">
-          <Text component="span" fw={600}>
-            Resources
-          </Text>{' '}
-          11 kinds
-        </Text>
-        <Text size="sm">
-          <Text component="span" fw={600}>
-            Authentication
-          </Text>{' '}
-          Application Password
-        </Text>
-      </Group>
-
       <Section
-        title="Connect Custom GPT"
-        description="Generate the connection once, then paste the token, Action schema, and instructions into your Custom GPT."
+        title="Connection"
+        description="One revocable WordPress credential connects ChatGPT to WPCommander."
       >
         <Paper withBorder p="lg">
           <Stack gap="lg">
             <Group justify="space-between" align="flex-start" wrap="wrap">
-              <Stack gap={3}>
-                <Text fw={600}>Connection setup</Text>
+              <Stack gap={3} maw={700}>
+                <Text fw={600}>WordPress connection</Text>
                 <Text c="dimmed" size="sm">
-                  WPCommander generates everything for this WordPress site. No
-                  manual Application Password setup is required.
+                  WordPress {snapshot.wordpressVersion}. Authentication uses a
+                  dedicated WordPress Application Password; WPCommander never
+                  stores its plaintext value.
                 </Text>
               </Stack>
               <Badge variant="outline">
@@ -426,202 +359,73 @@ export function OverviewPage() {
                   ? 'Authentication unavailable'
                   : snapshot.connectionCredentialExists || credential
                     ? 'Credential ready'
-                    : 'Not connected'}
+                    : 'Ready to connect'}
               </Badge>
             </Group>
-
             {snapshot.connectionStatus !== 'ready' ? (
               <Text c="orange.9" size="sm" role="status">
                 {snapshot.connectionMessage}
               </Text>
             ) : null}
-
-            <Divider />
-
-            <Stack gap="sm">
-              <Group justify="space-between" align="flex-start" wrap="wrap">
-                <Stack gap={3}>
-                  <Text fw={600}>1. Create connection token</Text>
-                  <Text c="dimmed" size="sm">
-                    Creates a dedicated WordPress Application Password for your
-                    current account and prepares the Basic token required by GPT
-                    Actions.
-                  </Text>
-                </Stack>
-                <Button
-                  onClick={generateCredential}
-                  loading={credentialLoading}
-                  disabled={!snapshot.applicationPasswordSupported}
-                >
-                  {snapshot.connectionCredentialExists || credential
-                    ? 'Regenerate token'
-                    : 'Generate connection token'}
-                </Button>
-              </Group>
-              {snapshot.connectionCredentialExists && !credential ? (
-                <Text c="dimmed" size="sm">
-                  A WPCommander credential already exists. Regenerating it
-                  revokes the previous token, so update the GPT immediately.
-                </Text>
-              ) : null}
-              {credentialError ? (
-                <Text c="red.8" size="sm">
-                  {credentialError}
-                </Text>
-              ) : null}
-              {credential ? (
-                <Paper withBorder p="md">
-                  <Stack gap="sm">
-                    <Text size="sm">
-                      WordPress user: <Code>{credential.username}</Code>
-                    </Text>
-                    <Text c="dimmed" size="sm">
-                      In the GPT Action editor choose Authentication → API key →
-                      Basic. Copy this token now; WPCommander does not store the
-                      plaintext credential.
-                    </Text>
-                    <CopyButton value={credential.basicToken}>
-                      {({ copied, copy }) => (
-                        <Button variant="default" onClick={copy}>
-                          {copied ? 'Token copied' : 'Copy Basic auth token'}
-                        </Button>
-                      )}
-                    </CopyButton>
-                  </Stack>
-                </Paper>
-              ) : null}
-            </Stack>
-
-            <Divider />
-
-            <SetupCopyItem
-              title="2. Copy Action schema"
-              description="Paste this JSON directly into the Custom GPT Action editor. Direct paste avoids URL-import, redirect, cache, and encoding issues."
-              value={snapshot.schemaText}
-              copyLabel="Copy Action schema"
-              detailLabel="View Action schema"
-            />
-
-            <Divider />
-
-            <SetupCopyItem
-              title="3. Copy GPT instructions"
-              description="Paste these instructions into the GPT Instructions field so it knows how to search, inspect, use Abilities, and respect the current access mode."
-              value={snapshot.customGptInstructions}
-              copyLabel="Copy GPT instructions"
-              detailLabel="View GPT instructions"
-            />
-
-            <Text c="dimmed" size="xs">
-              Optional schema URL: <Code>{snapshot.schemaUrl}</Code>
-            </Text>
-          </Stack>
-        </Paper>
-      </Section>
-
-      <Section
-        title="Command access"
-        description="Control normal structured edits and the separate privileged universal fallback."
-      >
-        <Paper withBorder p="lg">
-          <Group justify="space-between" align="flex-start" wrap="wrap">
-            <Stack gap={4} maw={700}>
-              <Group gap="xs">
-                <Text fw={600}>Structured writes</Text>
-                <Badge
-                  color={writesEnabled ? 'orange.8' : 'blue.7'}
-                  c="black"
-                  variant="filled"
-                >
-                  {writesEnabled ? 'Enabled' : 'Read-only'}
-                </Badge>
-              </Group>
-              <Text c="dimmed" size="sm">
-                When enabled, normal commands can change posts, post meta,
-                options, media fields, terms, and comments. WPCommander checks
-                fresh state, verifies each write, records activity, and captures
-                reversible before-state automatically.
-              </Text>
-              <Text c="dimmed" size="xs">
-                This does not enable arbitrary plugin write Abilities, PHP,
-                WP-CLI, SQL, or filesystem mutation. Normal GPT edits do not
-                require a separate approval step after this admin gate is on.
-              </Text>
-              {writeAccessError ? (
-                <Text c="red.8" size="sm" role="alert">
-                  {writeAccessError}
-                </Text>
-              ) : null}
-            </Stack>
-            <Button
-              variant={writesEnabled ? 'default' : 'filled'}
-              onClick={updateWriteAccess}
-              loading={writeAccessLoading}
-            >
-              {writesEnabled
-                ? 'Disable structured writes'
-                : 'Enable structured writes'}
-            </Button>
-          </Group>
-
-          <Divider my="lg" />
-
-          <Group justify="space-between" align="flex-start" wrap="wrap">
-            <Stack gap={4} maw={700}>
-              <Group gap="xs">
-                <Text fw={600}>Universal execution</Text>
-                <Badge
-                  color={universalExecutionEnabled ? 'red.8' : 'gray.7'}
-                  c="white"
-                  variant="filled"
-                >
-                  {universalExecutionEnabled ? 'Enabled' : 'Disabled'}
-                </Badge>
-              </Group>
-              <Text c="dimmed" size="sm">
-                Vendor-independent fallback for internal WordPress REST, loaded
-                PHP callables, bounded PHP and SQL, filesystem mutation, WP-CLI,
-                and plugin/theme write Abilities when narrower structured
-                primitives are not enough.
-              </Text>
-              <Text c="dimmed" size="xs">
-                This is a separate privileged gate. It does not expose secrets,
-                and ordinary structured edits should continue to use the safer
-                mutation path. Privileged operations still require a clearly
-                requested or explicitly confirmed step.
-              </Text>
-              {universalExecutionError ? (
-                <Text c="red.8" size="sm" role="alert">
-                  {universalExecutionError}
-                </Text>
-              ) : null}
-            </Stack>
-            <Button
-              color={universalExecutionEnabled ? undefined : 'red'}
-              variant={universalExecutionEnabled ? 'default' : 'filled'}
-              onClick={updateUniversalExecution}
-              loading={universalExecutionLoading}
-            >
-              {universalExecutionEnabled
-                ? 'Disable universal execution'
-                : 'Enable universal execution'}
-            </Button>
-          </Group>
-        </Paper>
-      </Section>
-
-      <Section
-        title="Production access test"
-        description="Verify what WPCommander can read on this site without changing production data."
-      >
-        <Paper withBorder p="lg">
-          <Stack gap="md">
             <Group justify="space-between" align="flex-start" wrap="wrap">
-              <Stack gap={3}>
-                <Text fw={600}>Read-only diagnostics</Text>
+              <Stack gap={3} maw={700}>
+                <Text fw={600}>
+                  {snapshot.connectionCredentialExists || credential
+                    ? 'Connection credential'
+                    : 'Create connection credential'}
+                </Text>
                 <Text c="dimmed" size="sm">
-                  Runs real search → inspect probes across all 11 resource kinds
-                  plus exposed WordPress Abilities.
+                  {snapshot.connectionCredentialExists || credential
+                    ? 'A WPCommander credential already exists. Rotate it only when reconnecting a client or replacing a lost credential.'
+                    : 'Create one dedicated credential for ChatGPT or another authorized WPCommander client.'}
+                </Text>
+              </Stack>
+              <Button
+                onClick={generateCredential}
+                loading={credentialLoading}
+                disabled={!snapshot.applicationPasswordSupported}
+                variant={
+                  snapshot.connectionCredentialExists || credential
+                    ? 'default'
+                    : 'filled'
+                }
+              >
+                {snapshot.connectionCredentialExists || credential
+                  ? 'Rotate credential'
+                  : 'Create credential'}
+              </Button>
+            </Group>
+            {credentialError ? (
+              <Text c="red.8" size="sm" role="alert">
+                {credentialError}
+              </Text>
+            ) : null}
+            {credential ? (
+              <Paper withBorder p="md">
+                <Stack gap="sm">
+                  <Text size="sm">
+                    WordPress user: <Code>{credential.username}</Code>
+                  </Text>
+                  <Text c="dimmed" size="sm">
+                    Copy this Basic auth token now. WPCommander cannot show it
+                    again after this page is reloaded.
+                  </Text>
+                  <CopyButton value={credential.basicToken}>
+                    {({ copied, copy }) => (
+                      <Button variant="default" onClick={copy}>
+                        {copied ? 'Token copied' : 'Copy Basic auth token'}
+                      </Button>
+                    )}
+                  </CopyButton>
+                </Stack>
+              </Paper>
+            ) : null}
+            <Divider />
+            <Group justify="space-between" align="flex-start" wrap="wrap">
+              <Stack gap={3} maw={700}>
+                <Text fw={600}>Connection health</Text>
+                <Text c="dimmed" size="sm">
+                  Run read-only probes when setup or access needs checking.
                 </Text>
               </Stack>
               <Button
@@ -629,148 +433,222 @@ export function OverviewPage() {
                 loading={diagnosticsLoading}
                 variant="default"
               >
-                Run access test
+                Run diagnostics
               </Button>
             </Group>
-
             {diagnosticsError ? (
-              <Text c="red.8" size="sm">
+              <Text c="red.8" size="sm" role="alert">
                 {diagnosticsError}
               </Text>
             ) : null}
-
             {diagnostics ? (
-              <Stack gap="md">
-                <Table
-                  visibleFrom="sm"
-                  verticalSpacing="sm"
-                  horizontalSpacing="md"
-                >
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Resource</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                      <Table.Th>Sample address</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {diagnostics.checks.map((check) => (
-                      <Table.Tr key={check.id}>
-                        <Table.Td>
-                          <Stack gap={2}>
-                            <Text size="sm" fw={600}>
-                              {check.label}
-                            </Text>
-                            <Text size="xs" c="dimmed">
+              <Stack gap="sm">
+                <Text size="sm" role="status">
+                  Diagnostics complete:{' '}
+                  {
+                    diagnostics.checks.filter((check) => check.status === 'ok')
+                      .length
+                  }
+                  /{diagnostics.checks.length} checks passed.
+                </Text>
+                <Box component="details" className="wpcommander-details">
+                  <Box
+                    component="summary"
+                    className="wpcommander-details-summary"
+                  >
+                    View diagnostic report
+                  </Box>
+                  <Stack gap="md" mt="sm">
+                    <Table
+                      visibleFrom="sm"
+                      verticalSpacing="sm"
+                      horizontalSpacing="md"
+                    >
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>Resource</Table.Th>
+                          <Table.Th>Status</Table.Th>
+                          <Table.Th>Sample address</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {diagnostics.checks.map((check) => (
+                          <Table.Tr key={check.id}>
+                            <Table.Td>
+                              <Stack gap={2}>
+                                <Text size="sm" fw={600}>
+                                  {check.label}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  {check.detail}
+                                </Text>
+                              </Stack>
+                            </Table.Td>
+                            <Table.Td>
+                              <Badge
+                                color={diagnosticTone[check.status].color}
+                                c={diagnosticTone[check.status].foreground}
+                                variant="filled"
+                              >
+                                {check.status}
+                              </Badge>
+                            </Table.Td>
+                            <Table.Td>
+                              {check.address ? (
+                                <Code>{check.address}</Code>
+                              ) : (
+                                '—'
+                              )}
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                    <Stack hiddenFrom="sm" gap={0}>
+                      {diagnostics.checks.map((check, index) => (
+                        <Box key={check.id}>
+                          <Stack gap={4} py="sm">
+                            <Group
+                              justify="space-between"
+                              align="flex-start"
+                              wrap="nowrap"
+                            >
+                              <Text fw={600} size="sm">
+                                {check.label}
+                              </Text>
+                              <Badge
+                                color={diagnosticTone[check.status].color}
+                                c={diagnosticTone[check.status].foreground}
+                                variant="filled"
+                              >
+                                {check.status}
+                              </Badge>
+                            </Group>
+                            <Text c="dimmed" size="sm">
                               {check.detail}
                             </Text>
+                            {check.address ? (
+                              <Code>{check.address}</Code>
+                            ) : null}
                           </Stack>
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge
-                            color={diagnosticTone[check.status].color}
-                            c={diagnosticTone[check.status].foreground}
-                            variant="filled"
-                          >
-                            {check.status}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          {check.address ? <Code>{check.address}</Code> : '—'}
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-
-                <Stack hiddenFrom="sm" gap={0}>
-                  {diagnostics.checks.map((check, index) => (
-                    <Box key={check.id}>
-                      <Stack gap={4} py="sm">
-                        <Group
-                          justify="space-between"
-                          align="flex-start"
-                          wrap="nowrap"
-                        >
-                          <Text fw={600} size="sm">
-                            {check.label}
-                          </Text>
-                          <Badge
-                            color={diagnosticTone[check.status].color}
-                            c={diagnosticTone[check.status].foreground}
-                            variant="filled"
-                          >
-                            {check.status}
-                          </Badge>
-                        </Group>
-                        <Text c="dimmed" size="sm">
-                          {check.detail}
-                        </Text>
-                        {check.address ? <Code>{check.address}</Code> : null}
-                      </Stack>
-                      {index < diagnostics.checks.length - 1 ? (
-                        <Divider />
-                      ) : null}
-                    </Box>
-                  ))}
-                </Stack>
-
-                <CopyButton value={JSON.stringify(diagnostics, null, 2)}>
-                  {({ copied, copy }) => (
-                    <Button variant="default" onClick={copy}>
-                      {copied ? 'Report copied' : 'Copy diagnostic report'}
-                    </Button>
-                  )}
-                </CopyButton>
+                          {index < diagnostics.checks.length - 1 ? (
+                            <Divider />
+                          ) : null}
+                        </Box>
+                      ))}
+                    </Stack>
+                    <CopyButton value={JSON.stringify(diagnostics, null, 2)}>
+                      {({ copied, copy }) => (
+                        <Button variant="default" onClick={copy}>
+                          {copied ? 'Report copied' : 'Copy diagnostic report'}
+                        </Button>
+                      )}
+                    </CopyButton>
+                  </Stack>
+                </Box>
               </Stack>
             ) : null}
+            <Divider />
+            <Box component="details" className="wpcommander-details">
+              <Box component="summary" className="wpcommander-details-summary">
+                Custom GPT setup
+              </Box>
+              <Stack gap="lg" mt="md">
+                <SetupCopyItem
+                  title="Action schema"
+                  description="Paste this JSON into the Custom GPT Action editor."
+                  value={snapshot.schemaText}
+                  copyLabel="Copy Action schema"
+                  detailLabel="View Action schema"
+                />
+                <Divider />
+                <SetupCopyItem
+                  title="GPT instructions"
+                  description="Paste these instructions into the Custom GPT Instructions field."
+                  value={snapshot.customGptInstructions}
+                  copyLabel="Copy GPT instructions"
+                  detailLabel="View GPT instructions"
+                />
+                <Text c="dimmed" size="xs">
+                  Optional schema URL: <Code>{snapshot.schemaUrl}</Code>
+                </Text>
+              </Stack>
+            </Box>
           </Stack>
         </Paper>
       </Section>
 
       <Section
-        title="Capabilities"
-        description="The GPT discovers capabilities at runtime instead of relying on vendor-specific adapters."
+        title="Site access"
+        description="Choose how much control connected ChatGPT may use on this WordPress site."
       >
-        <Paper withBorder>
-          <Stack gap={0}>
-            {currentCapabilities.map((capability, index) => (
-              <Box key={capability.id}>
-                <Group
-                  justify="space-between"
-                  align="flex-start"
-                  p="md"
-                  wrap="nowrap"
-                >
-                  <Stack gap={3}>
-                    <Text fw={600}>{capability.label}</Text>
-                    <Text c="dimmed" size="sm">
-                      {capability.description}
-                    </Text>
-                    <Text c="dimmed" size="xs">
-                      Source: {capability.source}
-                    </Text>
-                  </Stack>
-                  <Badge
-                    variant="filled"
-                    color={
-                      capability.access === 'write' ? 'orange.8' : 'blue.7'
-                    }
-                    c="black"
-                  >
-                    {capability.access}
+        <Paper withBorder p="lg">
+          <Stack gap="md">
+            <Group justify="space-between" align="flex-start" wrap="wrap">
+              <Stack gap={4} maw={700}>
+                <Group gap="xs">
+                  <Text fw={600}>Access level</Text>
+                  <Badge variant="filled" color="blue.9" c="white">
+                    {accessLabel}
                   </Badge>
                 </Group>
-                {index < currentCapabilities.length - 1 ? <Divider /> : null}
-              </Box>
-            ))}
+                <Text c="dimmed" size="sm">
+                  {accessDescription}
+                </Text>
+                {accessLevel === 'full' ? (
+                  <Text c="dimmed" size="xs">
+                    Full control still uses the narrowest available primitive
+                    first. Broad, destructive, irreversible, or privileged steps
+                    require clear user intent or explicit confirmation.
+                  </Text>
+                ) : null}
+              </Stack>
+              <Group gap="xs" wrap="wrap">
+                <Button
+                  variant={accessLevel === 'inspect' ? 'filled' : 'default'}
+                  onClick={() => updateAccessLevel('inspect')}
+                  disabled={accessLoading}
+                  aria-pressed={accessLevel === 'inspect'}
+                >
+                  Inspect only
+                </Button>
+                <Button
+                  variant={accessLevel === 'edit' ? 'filled' : 'default'}
+                  onClick={() => updateAccessLevel('edit')}
+                  disabled={accessLoading}
+                  aria-pressed={accessLevel === 'edit'}
+                >
+                  Edit site
+                </Button>
+                <Button
+                  variant={accessLevel === 'full' ? 'filled' : 'default'}
+                  onClick={() => updateAccessLevel('full')}
+                  disabled={accessLoading}
+                  aria-pressed={accessLevel === 'full'}
+                >
+                  Full control
+                </Button>
+              </Group>
+            </Group>
+            {accessError ? (
+              <Text c="red.8" size="sm" role="alert">
+                {accessError}
+              </Text>
+            ) : null}
+            <Divider />
+            <Text c="dimmed" size="sm">
+              WPCommander can inspect WordPress data, Abilities, plugin/theme
+              source and runtime, and—at Full control—use the universal
+              execution fallback for anything WordPress/PHP can reach. No
+              vendor-specific adapter is required for access.
+            </Text>
           </Stack>
         </Paper>
       </Section>
 
       <Section
         title="Recent activity"
-        description="Structured and universal execution activity remains inspectable."
+        description="Changes made through WPCommander and their recovery status."
       >
         {recentActivity.length === 0 ? (
           <Paper withBorder>

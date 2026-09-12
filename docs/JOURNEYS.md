@@ -2,29 +2,32 @@
 
 ## Primary journey: install to first successful change
 
-1. Install and activate WPCommander on a WordPress 6.9+ site.
-2. Open WPCommander in wp-admin and see whether the site is ready to connect, including whether Application Password authentication is actually available after security-plugin/site-policy filters.
-3. Generate the dedicated WPCommander connection token in the plugin, then copy the Action schema and recommended GPT instructions.
-4. In the Custom GPT editor, add an Action using the pasted schema and the generated Basic authentication token.
-5. Ask the GPT about the site. It calls discovery/search/inspect and explains what it found.
-6. When ready to permit normal edits, enable structured command access once in WPCommander wp-admin; this does not enable privileged execution or arbitrary plugin write Abilities.
-7. Ask for a normal change such as replacing text, a color, or a nested layout setting. The GPT resolves the target and sends one structured mutation command; WPCommander performs the safety preflight and verification internally.
-8. The GPT reports what changed. WPCommander rejects stale or unauthorized writes and records the change automatically.
-9. If a requested result cannot be expressed through structured resources or a registered Ability, the GPT may use the separately enabled universal execution plane. A clear user request for that privileged result supplies the operation intent; do not invent repetitive approval steps.
-10. Broad, destructive, irreversible, or otherwise ambiguous privileged operations require explicit confirmation; the admin can inspect activity and revert eligible structured changes from wp-admin or via the GPT.
+1. Install and activate WPCommander on a supported WordPress site.
+2. Open WPCommander in wp-admin and see whether WordPress Application Password authentication is actually available after site/security-plugin filters.
+3. Create the dedicated WPCommander credential. For a Custom GPT, copy the Action schema and recommended GPT instructions from the secondary setup disclosure.
+4. Connect ChatGPT using that revocable WordPress credential.
+5. Choose the intended site access level: Inspect only, Edit site, or Full control.
+6. Ask for the desired result in normal language. The GPT searches/discovers and inspects only as much current state as needed.
+7. Ordinary work is expressed through generic Create/Read/Update/Delete. Multi-field changes to one structured resource use one batch Update; duplication is Create from inspected source state.
+8. If an unknown plugin/theme cannot be understood from normal resources, the GPT inspects its runtime, REST routes, source, database structure, or files rather than asking for a vendor adapter.
+9. If CRUD or a native WordPress Ability cannot express the result and Full control is enabled, the GPT uses the universal Execute fallback.
+10. WPCommander verifies what can be verified, records activity, and the GPT reports the result. Eligible structured changes can be reverted later.
 
 ## Returning use
 
-The normal path is conversational: ask → discover if needed → inspect → execute → verify. Internal preflight/audit mechanics stay invisible unless something is ambiguous, stale, destructive, or privileged. Connection setup should not reappear unless the credential is missing/revoked or WordPress compatibility changes.
+The normal path is conversational: ask → discover/inspect if needed → execute → verify/report. Do not expose plan/apply ceremony, internal gate names, or adapter selection. Re-read current state whenever freshness matters.
+
+A clear user request for a result is sufficient operation intent when the required technical method is a reasonable consequence of that request. Ask again only when a broad, destructive, irreversible, or privileged consequence was not reasonably implied.
 
 ## Recovery
 
-- Authentication failure: show a clear reconnect path; never ask for the normal WordPress password.
-- Target not found/ambiguous: return bounded candidates and require a more specific target before executing.
-- Stale target: reject the mutation and make the GPT re-inspect current state rather than overwriting newer work.
-- Mutation failure: leave the target unchanged when possible and return a machine-readable WordPress error.
-- Lost credential: revoke it in the WordPress user profile and create a new dedicated Application Password.
+- Authentication failure: show a clear reconnect/rotate path; never ask for the normal WordPress password.
+- Target not found/ambiguous: return bounded candidates and resolve the target before a consequential change.
+- Stale target: reject the write and re-inspect rather than overwriting newer work.
+- Structured failure: leave/restore the target unchanged when possible and return a machine-readable error.
+- Universal failure: return bounded error metadata and verify actual state before retrying.
+- Lost credential: revoke/rotate the dedicated Application Password.
 
 ## Uninstall
 
-Remove WPCommander-owned settings and transient command/preflight data. Preserve user-created WordPress content and audit records unless the admin explicitly chooses deletion.
+Remove WPCommander-owned settings and transient control data. Preserve user-created WordPress content and audit records unless the administrator explicitly chooses deletion.

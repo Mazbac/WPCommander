@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4177',
     trace: 'retain-on-failure',
     locale: 'en-US',
     timezoneId: 'UTC',
@@ -28,8 +28,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173',
-    url: 'http://127.0.0.1:4173',
+    command: 'npm run dev -- --host 127.0.0.1 --port 4177 --strictPort',
+    url: 'http://127.0.0.1:4177',
     reuseExistingServer: !process.env.CI,
   },
 })

@@ -7,21 +7,28 @@ test('overview is usable and has no detectable accessibility violations', async 
   await page.goto('/')
 
   await expect(page.getByRole('heading', { name: 'WPCommander' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Connection' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Site access' })).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Generate connection token' }),
+    page.getByRole('button', { name: 'Create credential' }),
   ).toBeEnabled()
-  await expect(page.getByText('Connect Custom GPT')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Create credential' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Copy Basic auth token' }),
+  ).toBeVisible()
+
+  await page.getByText('Custom GPT setup').click()
   await expect(
     page.getByRole('button', { name: 'Copy Action schema' }),
   ).toBeEnabled()
   await expect(
     page.getByRole('button', { name: 'Copy GPT instructions' }),
   ).toBeEnabled()
-  await page.getByRole('button', { name: 'Generate connection token' }).click()
-  await expect(
-    page.getByRole('button', { name: 'Copy Basic auth token' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Run access test' }).click()
+
+  await page.getByRole('button', { name: 'Run diagnostics' }).click()
+  await expect(page.getByText(/Diagnostics complete:/i)).toBeVisible()
+  await page.getByText('View diagnostic report').click()
   await expect(page.getByText('Posts and pages').first()).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Copy diagnostic report' }),

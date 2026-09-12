@@ -10,7 +10,7 @@ describe('WPCommander overview', () => {
     delete window.wpCommanderBootstrap
   })
 
-  it('renders connection readiness and GPT setup', () => {
+  it('renders the compact connection and access overview', () => {
     render(
       <MantineProvider theme={theme}>
         <App />
@@ -18,57 +18,83 @@ describe('WPCommander overview', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'WPCommander' })).toBeVisible()
-    expect(screen.getByText('Connect Custom GPT')).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Connection' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Site access' })).toBeVisible()
     expect(
-      screen.getByRole('button', { name: 'Generate connection token' }),
+      screen.getByRole('button', { name: 'Create credential' }),
     ).toBeVisible()
-    expect(
-      screen.getByRole('button', { name: 'Copy Action schema' }),
-    ).toBeVisible()
-    expect(
-      screen.getByRole('button', { name: 'Copy GPT instructions' }),
-    ).toBeVisible()
+    expect(screen.getByText('Custom GPT setup')).toBeVisible()
   })
-
-  it('gates structured command access from wp-admin', async () => {
+  it('switches between inspect and edit access levels', () => {
     render(
       <MantineProvider theme={theme}>
         <App />
       </MantineProvider>,
     )
 
-    const enable = screen.getByRole('button', {
-      name: 'Enable structured writes',
-    })
-    expect(enable).toBeVisible()
-    fireEvent.click(enable)
+    const inspect = screen.getByRole('button', { name: 'Inspect only' })
+    const edit = screen.getByRole('button', { name: 'Edit site' })
+    expect(inspect).toHaveAttribute('aria-pressed', 'true')
+    expect(edit).toHaveAttribute('aria-pressed', 'false')
 
-    expect(
-      await screen.findByRole('button', { name: 'Disable structured writes' }),
-    ).toBeVisible()
-    expect(screen.getByText('Writes enabled')).toBeVisible()
+    fireEvent.click(edit)
+
+    expect(edit).toHaveAttribute('aria-pressed', 'true')
+    expect(inspect).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('gates universal execution separately from structured writes', async () => {
+  it('treats full control as one coherent access level', () => {
     render(
       <MantineProvider theme={theme}>
         <App />
       </MantineProvider>,
     )
 
-    const enable = screen.getByRole('button', {
-      name: 'Enable universal execution',
-    })
-    expect(enable).toBeVisible()
-    fireEvent.click(enable)
+    const full = screen.getByRole('button', { name: 'Full control' })
+    const edit = screen.getByRole('button', { name: 'Edit site' })
+    fireEvent.click(full)
+    expect(full).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText(/every WordPress control layer/i)).toBeVisible()
 
+    fireEvent.click(edit)
+    expect(edit).toHaveAttribute('aria-pressed', 'true')
+    expect(full).toHaveAttribute('aria-pressed', 'false')
+  })
+  it('keeps diagnostics secondary until requested', () => {
+    render(
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByText(/Diagnostics complete:/i)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Run diagnostics' }))
+    expect(screen.getByText(/Diagnostics complete:/i)).toBeVisible()
+    expect(screen.getByText('View diagnostic report')).toBeVisible()
+  })
+
+  it('explains when WordPress connection authentication is unavailable', () => {
+    window.wpCommanderBootstrap = {
+      ...developmentControlPlane,
+      connectionStatus: 'warning',
+      connectionMessage:
+        'Application Passwords are disabled by WordPress site policy or a security plugin.',
+      applicationPasswordSupported: false,
+    }
+
+    render(
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Authentication unavailable')).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Application Passwords are disabled by WordPress site policy or a security plugin.',
+    )
     expect(
-      await screen.findByRole('button', {
-        name: 'Disable universal execution',
-      }),
-    ).toBeVisible()
-    expect(screen.getByText('Universal execution enabled')).toBeVisible()
-    expect(screen.getByText('Run WordPress Abilities')).toBeVisible()
+      screen.getByRole('button', { name: 'Create credential' }),
+    ).toBeDisabled()
   })
 
   it('shows universal execution in recent activity', () => {
@@ -95,29 +121,5 @@ describe('WPCommander overview', () => {
     expect(
       screen.getAllByText('wp_update_nav_menu_item').length,
     ).toBeGreaterThan(0)
-  })
-
-  it('explains when Application Password authentication is unavailable', () => {
-    window.wpCommanderBootstrap = {
-      ...developmentControlPlane,
-      connectionStatus: 'warning',
-      connectionMessage:
-        'Application Passwords are disabled by WordPress site policy or a security plugin. Enable them before connecting ChatGPT.',
-      applicationPasswordSupported: false,
-    }
-
-    render(
-      <MantineProvider theme={theme}>
-        <App />
-      </MantineProvider>,
-    )
-
-    expect(screen.getByText('Authentication unavailable')).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Application Passwords are disabled by WordPress site policy or a security plugin.',
-    )
-    expect(
-      screen.getByRole('button', { name: 'Generate connection token' }),
-    ).toBeDisabled()
   })
 })

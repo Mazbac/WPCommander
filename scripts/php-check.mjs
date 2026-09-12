@@ -85,6 +85,25 @@ for (const marker of [
   'wpcommander_array_append_blocked',
   'contains_sensitive_keys',
   'wpcommander_rollback_failed',
+  'create_resource',
+  'mutate_batch',
+  'delete_resource',
+  'copy_post_relations',
+  "'attachment' === $post->post_type",
+  'delete_post_meta( $target_id, (string) $key )',
+  "wp_set_object_terms( $target_id, array_map( 'intval', $terms )",
+  'created_state_fingerprint',
+  'find_create_replay',
+  'find_delete_replay',
+  'wp_trash_post',
+  'wp_untrash_post',
+  'wpcommander_delete_confirmation_required',
+  'find_batch_replay',
+  'record_batch_activity',
+  'batch_pointers_overlap',
+  'wpcommander_overlapping_batch_pointer',
+  'wpcommander_batch_revert_missing_state',
+  'wpcommander_batch_revert_rollback_failed',
 ]) {
   if (!mutations.includes(marker)) {
     throw new Error(`Structured mutation safety marker missing: ${marker}`)
@@ -176,6 +195,41 @@ if (
   throw new Error(
     'Privileged write Abilities and binary filesystem execution must remain explicit in the API contract.',
   )
+}
+
+for (const marker of [
+  "'/resources/create'",
+  "'/resources/update'",
+  "'/resources/update-batch'",
+  "'/resources/delete'",
+  "'operationId' => 'createWordPressResource'",
+  "'operationId' => 'updateWordPressResource'",
+  "'operationId' => 'updateWordPressResourceBatch'",
+  "'operationId' => 'deleteWordPressResource'",
+]) {
+  if (!core.includes(marker)) {
+    throw new Error(`Generic CRUD API contract missing: ${marker}`)
+  }
+}
+if (core.includes("'/wp-json/wpcommander/v1/resources/clone'")) {
+  throw new Error(
+    'Machine-facing API must express duplication as generic Create, not a clone endpoint.',
+  )
+}
+
+for (const providerMarker of [
+  '_elementor_data',
+  'Elementor',
+  'WooCommerce',
+  'Divi',
+  'Bricks',
+  'Advanced Custom Fields',
+]) {
+  if ((core + resources + mutations).includes(providerMarker)) {
+    throw new Error(
+      `Provider-specific implementation marker is forbidden: ${providerMarker}`,
+    )
+  }
 }
 
 const fingerprintUses = executor.match(/require_file_fingerprint\s*\(/g) ?? []
