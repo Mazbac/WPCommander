@@ -167,7 +167,54 @@ export function OverviewPage() {
   )
   const [writeAccessError, setWriteAccessError] = useState('')
   const [writeAccessLoading, setWriteAccessLoading] = useState(false)
-  const currentAccessMode = writesEnabled ? 'write-enabled' : 'read-only'
+  const [universalExecutionEnabled, setUniversalExecutionEnabled] = useState(
+    snapshot.universalExecutionEnabled,
+  )
+  const [universalExecutionError, setUniversalExecutionError] = useState('')
+  const [universalExecutionLoading, setUniversalExecutionLoading] =
+    useState(false)
+  const accessLabel = universalExecutionEnabled
+    ? 'Universal execution enabled'
+    : writesEnabled
+      ? 'Writes enabled'
+      : 'Read-only diagnostics'
+  const recentActivity = [
+    ...snapshot.activity,
+    ...snapshot.executionActivity,
+  ].sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+  const currentCapabilities = snapshot.capabilities.map((capability) => {
+    if (capability.id === 'mutate') {
+      return {
+        ...capability,
+        description: writesEnabled
+          ? 'Execute direct structured changes with stale-state checks, verification, audit, and revert capture.'
+          : 'Structured changes are available but disabled until an administrator enables command access.',
+      }
+    }
+    if (capability.id === 'universal-execute') {
+      return {
+        ...capability,
+        description: universalExecutionEnabled
+          ? 'Use vendor-independent internal REST, PHP, SQL, filesystem, WP-CLI, and loaded-callable execution when narrower primitives cannot express the requested change.'
+          : 'Universal execution is available but disabled until an administrator explicitly enables its separate privileged gate.',
+      }
+    }
+    if (capability.id === 'execute') {
+      return {
+        ...capability,
+        label: universalExecutionEnabled
+          ? 'Run WordPress Abilities'
+          : 'Run read-only abilities',
+        description: universalExecutionEnabled
+          ? 'Execute exposed WordPress Abilities, including write Abilities, with privileged confirmation for non-readonly operations.'
+          : 'Execute exposed read-only WordPress Abilities. Write Abilities require the separate universal execution gate.',
+        access: universalExecutionEnabled
+          ? ('write' as const)
+          : ('read' as const),
+      }
+    }
+    return capability
+  })
 
   async function generateCredential() {
     setCredentialLoading(true)
@@ -249,6 +296,47 @@ export function OverviewPage() {
     }
   }
 
+  async function updateUniversalExecution() {
+    const enabled = !universalExecutionEnabled
+    setUniversalExecutionLoading(true)
+    setUniversalExecutionError('')
+
+    try {
+      if (snapshot.restNonce === 'development') {
+        setUniversalExecutionEnabled(enabled)
+        return
+      }
+      const response = await fetch(snapshot.universalExecutionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': snapshot.restNonce,
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ enabled }),
+      })
+      const payload = (await response.json()) as {
+        enabled?: boolean
+        message?: string
+      }
+      if (!response.ok || typeof payload.enabled !== 'boolean') {
+        throw new Error(
+          payload.message ??
+            `Universal execution update failed (${response.status})`,
+        )
+      }
+      setUniversalExecutionEnabled(payload.enabled)
+    } catch (error) {
+      setUniversalExecutionError(
+        error instanceof Error
+          ? error.message
+          : 'Universal execution update failed.',
+      )
+    } finally {
+      setUniversalExecutionLoading(false)
+    }
+  }
+
   async function runDiagnostics() {
     setDiagnosticsLoading(true)
     setDiagnosticsError('')
@@ -283,11 +371,7 @@ export function OverviewPage() {
         description="Connect ChatGPT to WordPress, inspect the site, and keep control of every action."
         actions={
           <Group gap="xs">
-            <Badge variant="outline">
-              {currentAccessMode === 'read-only'
-                ? 'Read-only diagnostics'
-                : 'Writes enabled'}
-            </Badge>
+            <Badge variant="outline">{accessLabel}</Badge>
             <Badge
               color={statusTone[snapshot.connectionStatus].color}
               c={statusTone[snapshot.connectionStatus].foreground}
@@ -437,7 +521,7 @@ export function OverviewPage() {
 
       <Section
         title="Command access"
-        description="Choose whether the connected GPT may execute normal structured WordPress edits."
+        description="Control normal structured edits and the separate privileged universal fallback."
       >
         <Paper withBorder p="lg">
           <Group justify="space-between" align="flex-start" wrap="wrap">
@@ -477,6 +561,50 @@ export function OverviewPage() {
               {writesEnabled
                 ? 'Disable structured writes'
                 : 'Enable structured writes'}
+            </Button>
+          </Group>
+
+          <Divider my="lg" />
+
+          <Group justify="space-between" align="flex-start" wrap="wrap">
+            <Stack gap={4} maw={700}>
+              <Group gap="xs">
+                <Text fw={600}>Universal execution</Text>
+                <Badge
+                  color={universalExecutionEnabled ? 'red.8' : 'gray.7'}
+                  c="white"
+                  variant="filled"
+                >
+                  {universalExecutionEnabled ? 'Enabled' : 'Disabled'}
+                </Badge>
+              </Group>
+              <Text c="dimmed" size="sm">
+                Vendor-independent fallback for internal WordPress REST, loaded
+                PHP callables, bounded PHP and SQL, filesystem mutation, WP-CLI,
+                and plugin/theme write Abilities when narrower structured
+                primitives are not enough.
+              </Text>
+              <Text c="dimmed" size="xs">
+                This is a separate privileged gate. It does not expose secrets,
+                and ordinary structured edits should continue to use the safer
+                mutation path. Privileged operations still require a clearly
+                requested or explicitly confirmed step.
+              </Text>
+              {universalExecutionError ? (
+                <Text c="red.8" size="sm" role="alert">
+                  {universalExecutionError}
+                </Text>
+              ) : null}
+            </Stack>
+            <Button
+              color={universalExecutionEnabled ? undefined : 'red'}
+              variant={universalExecutionEnabled ? 'default' : 'filled'}
+              onClick={updateUniversalExecution}
+              loading={universalExecutionLoading}
+            >
+              {universalExecutionEnabled
+                ? 'Disable universal execution'
+                : 'Enable universal execution'}
             </Button>
           </Group>
         </Paper>
@@ -606,7 +734,7 @@ export function OverviewPage() {
       >
         <Paper withBorder>
           <Stack gap={0}>
-            {snapshot.capabilities.map((capability, index) => (
+            {currentCapabilities.map((capability, index) => (
               <Box key={capability.id}>
                 <Group
                   justify="space-between"
@@ -633,7 +761,7 @@ export function OverviewPage() {
                     {capability.access}
                   </Badge>
                 </Group>
-                {index < snapshot.capabilities.length - 1 ? <Divider /> : null}
+                {index < currentCapabilities.length - 1 ? <Divider /> : null}
               </Box>
             ))}
           </Stack>
@@ -642,9 +770,9 @@ export function OverviewPage() {
 
       <Section
         title="Recent activity"
-        description="Applied and reverted changes remain inspectable."
+        description="Structured and universal execution activity remains inspectable."
       >
-        {snapshot.activity.length === 0 ? (
+        {recentActivity.length === 0 ? (
           <Paper withBorder>
             <EmptyState
               title="No activity yet"
@@ -654,7 +782,7 @@ export function OverviewPage() {
         ) : (
           <>
             <Stack gap="sm" hiddenFrom="sm">
-              {snapshot.activity.map((item) => (
+              {recentActivity.map((item) => (
                 <Paper withBorder p="md" key={item.id}>
                   <Stack gap="xs">
                     <Group justify="space-between" align="flex-start">
@@ -686,7 +814,7 @@ export function OverviewPage() {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {snapshot.activity.map((item) => (
+                  {recentActivity.map((item) => (
                     <Table.Tr key={item.id}>
                       <Table.Td>{item.action}</Table.Td>
                       <Table.Td>{item.target}</Table.Td>

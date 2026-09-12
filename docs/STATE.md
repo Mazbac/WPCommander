@@ -3,50 +3,55 @@
 ## Current
 
 - Mode: active product development
-- Epic: Custom GPT connection -> safe change
-- Feature: direct structured command execution on top of universal read/runtime inspection
+- Epic: universal WordPress control
+- Feature: 0.1.10 universal execution plane on top of generic discovery and structured mutation
 - Branch: `feat/control-plane-foundation`
-- Release candidate: `0.1.9`
-- Live production site validated 0.1.2 search -> inspect for post, post-meta/Elementor, option, media, term, user, menu, plugin, theme, and site; comments had no sample object.
-- Live Custom GPT Actions connection is authenticated successfully against production on 0.1.6 after allowing ChatGPT edge traffic and enabling WordPress Application Passwords in Wordfence.
-- Live 0.1.8 runtime inspection proved the no-adapter model against Code Snippets 3.10.2: the GPT independently traced plugin source/bootstrap, confirmed 23 live REST routes under `/code-snippets/v1`, and discovered/described the plugin's `wp_snippets` table without reading snippet rows.
+- Release candidate: `0.1.10`
+- Live production was last explicitly verified on 0.1.8. Do not assume 0.1.9 or 0.1.10 is installed/live-verified until the user confirms it.
+- Live Custom GPT Actions authentication is working after allowing ChatGPT edge traffic and enabling WordPress Application Passwords in Wordfence.
+- Live 0.1.8 runtime inspection proved the no-adapter model against Code Snippets 3.10.2: the GPT independently traced plugin source/bootstrap, confirmed 23 live REST routes under `/code-snippets/v1`, and discovered/described `wp_snippets` without reading snippet rows.
 
 ## Working
 
-- WordPress-native admin surface embedded inside wp-admin.
-- Generic resource search/inspect supports 11 first-class kinds plus bounded structured-value search and JSON Pointer addressing.
-- Direct REST Action operations now expose resource search, inspect, and search-inside with explicit OpenAPI schemas; dynamic WordPress Abilities remain available.
-- Production defaults to read-only; non-readonly Abilities are rejected.
-- WPCommander can explicitly create/rotate a dedicated Application Password for the current administrator and returns a Base64 Basic token once for GPT Actions.
-- wp-admin provides copy-ready site-specific Action schema and recommended Custom GPT instructions; direct paste is the default setup path.
-- The generated OpenAPI satisfies the stricter Custom GPT Actions object-schema validator by giving every exposed object schema `properties` and emitting `components.schemas` as an object.
-- Production diagnostics include a ChatGPT-style public-edge probe using `ChatGPT-User/1.0`, so host/CDN/WAF bot blocks are visible before Action testing.
-- Release packaging now always places plugin files under one canonical `wpcommander/` directory, so future uploaded ZIPs replace the existing WordPress plugin instead of creating version-named duplicate plugins.
-- Connection readiness now checks actual Application Password availability after WordPress/security-plugin filters, including per-user availability; setup and diagnostics explain when authentication is blocked instead of reporting a false READY state.
-- 0.1.8 adds one bounded read-only developer-inspection primitive for runtime inventory, REST route discovery, plugin/theme/core source browsing/search, and WordPress-prefix database table/schema/sample inspection with path/size limits and secret redaction.
-- Normal structured changes are a direct command from the user/GPT perspective; preflight, stale-state protection, verification, audit, and reversible capture are internal mechanics rather than a visible plan/apply workflow.
-- 0.1.9 adds direct field-set commands for post/media/term/comment plus exact nested set/remove for post-meta/options. A fresh resource fingerprint is required; retries are idempotent; successful writes are verified and recorded for stale-safe revert.
-- Structured writes are disabled by default and enabled only through an explicit wp-admin command-access gate. Enabling them does not enable arbitrary plugin/theme write Abilities or privileged PHP/SQL/WP-CLI/filesystem execution.
+- WordPress-native admin surface, one-click dedicated Application Password creation/rotation, copy-ready Action schema, and generated GPT instructions.
+- Generic resource search/inspect covers 11 first-class kinds plus bounded structured-value search and RFC 6901 JSON Pointer addressing.
+- Bounded developer inspection covers runtime inventory, REST routes, source search/read, WordPress database table/schema/sample inspection, and hash-only `stat-path` metadata for files that should not expose contents.
+- 0.1.9 structured mutations remain the preferred narrow write path for post/media/term/comment fields and exact nested post-meta/options. They require a fresh resource fingerprint, verify results, record reversible activity, and reject stale state.
+- Structured writes remain behind their own wp-admin gate; enabling them never enables the privileged universal plane.
+- 0.1.10 adds one vendor-independent universal execution operation with `internal-rest`, `call-function`, `php-eval`, `sql`, `write-file`, `make-directory`, `move-path`, `delete-path`, and `wp-cli` primitives.
+- Universal execution has its own wp-admin gate and administrator capability check. Every privileged operation requires `confirmed=true`; exposed non-readonly WordPress Abilities use the same gate/confirmation semantics.
+- The universal plane is a fallback, not an adapter layer. Unknown/future plugins are discovered through generic source/runtime/storage inspection and then controlled through the narrowest generic primitive available.
+- Existing file overwrite/move/delete is stale-protected with a fresh SHA-256 from `stat-path`; text and Base64/binary writes are supported up to the bounded per-operation file limit.
+- Universal SQL is single-statement, bounded, restricted away from database/server-account administration and external/system schemas, and returns bounded/redacted output for reads.
+- Privileged PHP executes inside WordPress but intentionally returns execution metadata rather than raw stdout/return values; state must be verified through normal inspection after execution.
+- WP-CLI execution is time/output bounded, escapes arguments, and redirects overlapping PHP/SQL/credential-reading operations to the dedicated primitives.
+- Privileged responses/errors use bounded secret-aware redaction; execution activity stores operation metadata only, not PHP, SQL, file contents, request bodies, or positional arguments.
+- Structured and universal execution activity are both visible in the same Recent activity UI.
+- Durable rule D019 is authoritative: universal capability is invariant; risk changes gating/confirmation/audit, not whether a WordPress-accessible subsystem has a generic control path.
 
 ## Verification
 
-- `npm run verify:full` passes for 0.1.9: formatting, lint, TypeScript, UI conformance, PHP parse/safety contracts, 3 unit tests, production build, Playwright/axe accessibility, and reviewed desktop/mobile visual regression.
-- `npm run package:plugin` created `release/wpcommander-0.1.9.zip` with the canonical `wpcommander/` top-level directory and the new mutation engine.
-- The PHP safety gate covers both the bounded read-only developer inspector and the structured mutation boundary; the workstation still has no native PHP/WordPress runtime.
-- Live production has validated one-click WPCommander credential creation and an authenticated `getWPCommanderManifest` Custom GPT Action call on 0.1.6.
-- Live WordPress now advertises Application Password authentication and the public WPCommander OpenAPI route returns HTTP 200 to `ChatGPT-User/1.0`.
+- `npm run verify:full` passes for 0.1.10: Prettier, oxlint (0 warnings/errors), TypeScript, UI conformance, PHP parse/safety contracts across 6 PHP files, 5 Vitest tests, Vite production build, Playwright/axe accessibility, and desktop/mobile visual regression.
+- The new desktop/mobile Command access layout was manually reviewed before accepting the intentional visual baseline changes; no clipping or overlap was found.
+- `npm run package:plugin` created `release/wpcommander-0.1.10.zip` with the canonical `wpcommander/` top-level directory and the new developer execution class.
+- Release ZIP size: 173889 bytes. SHA-256: `78386BC5C62D231BF4F984CD36510C614403F85D23B7A0F1A06652B0B91CCE1F`.
+- The workstation still has no native PHP/WordPress runtime; PHP verification is parser/static-contract based. Live WordPress behavior for 0.1.10 remains to be verified after installation.
+- Live WordPress previously advertised Application Password authentication and returned HTTP 200 for the public WPCommander OpenAPI route to `ChatGPT-User/1.0`.
 
 ## Next
 
-1. Install 0.1.9, refresh the Action schema/instructions, and explicitly enable structured writes in wp-admin.
-2. Confirm the manifest reports `write-enabled` while arbitrary plugin write Abilities remain blocked.
-3. Live-test a deliberately low-risk structured edit through the Custom GPT, verify the changed resource, then revert it through the recorded activity entry.
-4. Live-test one narrow Elementor setting via `_elementor_data`/JSON Pointer and verify whether Elementor runtime/cache side effects require a generic follow-up primitive.
-5. Add the explicitly gated privileged execution plane for arbitrary filesystem/database/WP-CLI/PHP operations.
+1. Install 0.1.10 on the production site, refresh the Custom GPT Action schema and generated instructions, and keep the existing Basic credential unless it has been revoked.
+2. Verify the live manifest/diagnostics first; confirm both Structured writes and Universal execution default to off after upgrade.
+3. Enable Structured writes for normal edits and Universal execution separately when the administrator wants whole-site fallback capability.
+4. Run a low-risk structured write -> verify -> activity -> revert test.
+5. Run a controlled cross-resource acceptance test for the actual workflow: clone an existing page, change its content/metadata, publish or keep it draft as requested, rewire the intended menu item, and verify navigation. Use generic WordPress callables/resources; no page-builder/menu adapter is allowed as a prerequisite.
+6. Then live-test an unknown-plugin operation that genuinely requires the universal fallback and verify resulting runtime/storage state.
 
-## Known issues
+## Known issues / bounds
 
 - Direct schema paste remains the default because earlier live REST responses included a UTF-8 BOM and URL import was unreliable; targeted WPCommander output cleanup still needs live re-verification.
-- Structured writes currently cover post, post-meta, option, media, term, and comment only; numeric array add/remove, plugin/theme lifecycle, users/roles, menus, and high-impact core options remain outside the normal mutation surface.
-- Privileged developer execution (arbitrary PHP/SQL/WP-CLI/filesystem mutation) is not implemented; developer inspection remains bounded/read-only.
+- Structured mutations intentionally remain narrower than the universal plane. Numeric array insertion/removal, plugin/theme lifecycle, users/roles, menus, arbitrary custom tables, and code changes should use the universal fallback when no narrower Ability/resource mutation exists.
+- Privileged universal operations do not promise automatic rollback. They are gated, bounded, audited, and should be followed by explicit state verification.
+- `write-file` is bounded to 4 MiB per operation; larger media/artifact workflows should use WordPress APIs, plugin APIs, HTTP-capable callables, or WP-CLI rather than inflating a GPT Action payload.
+- WP-CLI execution depends on host process permissions and the `wp` binary being available; this has not been live-verified on production.
 - Comments legitimately warn when the site has no readable comment sample.

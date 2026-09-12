@@ -23,6 +23,8 @@ final class WPCommander_Developer_Inspect {
 		switch ( $operation ) {
 			case 'inventory':
 				return $this->inventory();
+			case 'stat-path':
+				return $this->stat_path( $input );
 			case 'list-files':
 				return $this->list_files( $input );
 			case 'read-file':
@@ -77,6 +79,27 @@ final class WPCommander_Developer_Inspect {
 			'phpVersion'         => PHP_VERSION,
 			'wordpressVersion'   => get_bloginfo( 'version' ),
 			'environment'        => function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production',
+		);
+	}
+
+	private function stat_path( array $input ) {
+		$resolved = $this->resolve_stat_path( $input );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
+		}
+
+		$is_file = is_file( $resolved['absolute'] );
+		$size    = $is_file ? filesize( $resolved['absolute'] ) : null;
+		$mtime   = filemtime( $resolved['absolute'] );
+		$sha256  = $is_file ? hash_file( 'sha256', $resolved['absolute'] ) : null;
+
+		return array(
+			'root'       => $resolved['root'],
+			'path'       => $resolved['relative'],
+			'type'       => $is_file ? 'file' : 'directory',
+			'size'       => false === $size ? null : $size,
+			'modifiedAt' => false === $mtime ? null : gmdate( 'c', $mtime ),
+			'sha256'     => is_string( $sha256 ) ? $sha256 : null,
 		);
 	}
 
@@ -147,6 +170,7 @@ final class WPCommander_Developer_Inspect {
 		return array(
 			'root'       => $resolved['root'],
 			'path'       => $resolved['relative'],
+			'sha256'     => hash_file( 'sha256', $resolved['absolute'] ),
 			'lines'      => $output,
 			'totalLines' => count( $lines ),
 			'truncated'  => $start - 1 + count( $output ) < count( $lines ),
@@ -383,6 +407,42 @@ final class WPCommander_Developer_Inspect {
 	private function is_key_label_column( string $column ): bool {
 		return (bool) preg_match( '/(?:^|_)(?:key|name)$/i', $column )
 			|| (bool) preg_match( '/^(?:option|setting|parameter)$/i', $column );
+	}
+
+	private function stat_roots(): array {
+		$uploads = wp_get_upload_dir();
+		return array_filter(
+			array(
+				'plugins'    => WP_PLUGIN_DIR,
+				'themes'     => get_theme_root(),
+				'mu-plugins' => defined( 'WPMU_PLUGIN_DIR' ) ? WPMU_PLUGIN_DIR : null,
+				'wordpress'  => ABSPATH,
+				'content'    => WP_CONTENT_DIR,
+				'uploads'    => empty( $uploads['basedir'] ) ? null : $uploads['basedir'],
+			)
+		);
+	}
+
+	private function resolve_stat_path( array $input ) {
+		$root_name = isset( $input['root'] ) ? sanitize_key( (string) $input['root'] ) : '';
+		$relative  = isset( $input['path'] ) ? ltrim( str_replace( '\\', '/', (string) $input['path'] ), '/' ) : '';
+		$roots     = $this->stat_roots();
+		if ( ! isset( $roots[ $root_name ] ) || '' === $relative || false !== strpos( $relative, "\0" ) || preg_match( '#(?:^|/)\.\.(?:/|$)#', $relative ) ) {
+			return new WP_Error( 'wpcommander_invalid_stat_path', __( 'A valid WordPress root and relative path are required.', 'wpcommander' ), array( 'status' => 400 ) );
+		}
+
+		$base     = realpath( $roots[ $root_name ] );
+		$absolute = realpath( trailingslashit( $roots[ $root_name ] ) . $relative );
+		if ( false === $base || false === $absolute || ! $this->is_path_inside_base( $absolute, $base ) ) {
+			return new WP_Error( 'wpcommander_stat_path_not_found', __( 'Path was not found inside the selected WordPress root.', 'wpcommander' ), array( 'status' => 404 ) );
+		}
+
+		return array(
+			'root'     => $root_name,
+			'base'     => $base,
+			'absolute' => $absolute,
+			'relative' => $this->relative_from_base( $base, $absolute ),
+		);
 	}
 
 	private function file_roots(): array {

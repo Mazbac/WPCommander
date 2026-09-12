@@ -32,6 +32,13 @@
 - [x] Implement authorized stale-safe revert.
 - [ ] Live-verify the end-to-end Custom GPT write -> verify -> activity -> revert flow on production.
 
+### Epic: Universal execution
+
+- [x] Add one vendor-independent privileged execution operation covering internal REST, loaded PHP callables, bounded PHP/SQL, WordPress filesystem mutation, and WP-CLI.
+- [x] Keep universal execution behind a separate administrator gate and explicit privileged-command confirmation semantics.
+- [x] Add bounded execution activity metadata and hash-only path inspection so existing files can be stale-checked without exposing contents.
+- [ ] Live-verify an unknown-plugin or cross-resource task that requires the universal fallback.
+
 ## Later
 
-Media upload/transform, plugin/theme lifecycle management, multisite, scheduled automation, compatibility shims for exceptional products, and richer native Ability passthrough. Arbitrary SQL/filesystem/PHP execution stays outside the generic control surface.
+Richer media workflows, multisite fleet workflows, scheduled automation, and optional compatibility expertise remain later. Plugin/theme lifecycle, custom storage, code changes, and other site-local operations do not require dedicated roadmap features when they can already be composed through universal primitives.

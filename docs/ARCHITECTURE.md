@@ -16,20 +16,20 @@ WPCommander has complementary control layers. The goal is broad WordPress contro
 1. **Structured resource plane** — safe, introspectable access to posts, post meta, options, terms, media, users where permitted, and nested structured values through stable addresses and JSON Pointer paths.
 2. **Native ability plane** — discover and execute permission-aware WordPress Abilities registered by core, plugins, themes, and WPCommander itself.
 3. **Developer inspection plane** — bounded read-only inspection of plugin/theme/core source, registered runtime surface, and WordPress-prefixed database structure/sample rows so an unknown plugin can be understood without a prebuilt adapter. Secret-like files, fields, and values are denied or redacted.
-4. **Privileged execution plane** — opt-in escape-hatch abilities for arbitrary PHP, WP-CLI, SQL, and filesystem mutation when the narrower planes cannot express the requested operation.
+4. **Universal execution plane** — opt-in escape-hatch abilities for arbitrary PHP, WP-CLI, SQL, and filesystem mutation when the narrower planes cannot express the requested operation.
 
 Provider-specific integrations are optional expertise, not required access. Elementor, Bricks, WooCommerce, ACF, or a future plugin should remain reachable through the generic planes even when WPCommander has no dedicated adapter.
 
 ## External API
 
-The stable ChatGPT Action surface stays compact: manifest/diagnostics, three generic resource reads (search, inspect, search-inside), direct structured mutation plus activity/revert, one bounded developer-inspection operation, and dynamic Ability discovery/execution. Explicit resource/developer operations give the GPT strongly typed generic primitives while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through generic resources, runtime inspection, or Ability discovery rather than one Action endpoint per plugin.
+The stable ChatGPT Action surface stays compact: manifest/diagnostics, three generic resource reads (search, inspect, search-inside), direct structured mutation plus activity/revert, bounded developer inspection, one vendor-independent universal execution operation, and dynamic Ability discovery/execution. Explicit resource/developer operations give the GPT strongly typed generic primitives while Abilities remain the extensibility escape hatch. New vendor capabilities should normally appear through generic resources, runtime inspection, or Ability discovery rather than one Action endpoint per plugin.
 
 ## Authentication and authorization
 
 - External GPT access uses WordPress Application Passwords over HTTP Basic authentication. The wp-admin setup action may create/rotate a WPCommander-specific Application Password for the current administrator and returns only a one-time Base64 Basic token; WPCommander never stores the plaintext credential.
 - Every operation runs as the authenticated WordPress user and checks the narrowest applicable capability.
 - Sensitive options/meta are denied by default; credentials, salts, sessions, and secret-like values are never returned by generic discovery.
-- Privileged developer abilities require an additional explicit feature gate. They are disabled on production by default and are never implied by possession of an Application Password alone.
+- Universal execution requires an additional explicit administrator feature gate. It is disabled by default and is never implied by possession of an Application Password or structured-write access alone.
 
 ## Command execution protocol
 
@@ -41,4 +41,4 @@ The stable ChatGPT Action surface stays compact: manifest/diagnostics, three gen
 
 ## Boundary rule
 
-Prefer structured resources and native Abilities first, then bounded developer inspection to understand unknown code/storage. Use privileged execution only as the final escape hatch rather than adding endless vendor adapters. Add provider-specific code only when it improves semantics, safety, or ergonomics; it must never be required merely to gain access to that provider's underlying WordPress data.
+Prefer structured resources and native Abilities first, then bounded developer inspection to understand unknown code/storage. Use universal execution as the final escape hatch rather than adding endless vendor adapters. Risk gates may add confirmation or stronger audit, but may not make a WordPress-accessible subsystem permanently unreachable. Add provider-specific code only when it improves semantics, safety, or ergonomics; it must never be required merely to gain access to that provider's underlying WordPress data.

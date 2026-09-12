@@ -49,6 +49,54 @@ describe('WPCommander overview', () => {
     expect(screen.getByText('Writes enabled')).toBeVisible()
   })
 
+  it('gates universal execution separately from structured writes', async () => {
+    render(
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>,
+    )
+
+    const enable = screen.getByRole('button', {
+      name: 'Enable universal execution',
+    })
+    expect(enable).toBeVisible()
+    fireEvent.click(enable)
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Disable universal execution',
+      }),
+    ).toBeVisible()
+    expect(screen.getByText('Universal execution enabled')).toBeVisible()
+    expect(screen.getByText('Run WordPress Abilities')).toBeVisible()
+  })
+
+  it('shows universal execution in recent activity', () => {
+    window.wpCommanderBootstrap = {
+      ...developmentControlPlane,
+      executionActivity: [
+        {
+          id: 'exec-1',
+          action: 'call-function',
+          target: 'wp_update_nav_menu_item',
+          state: 'applied',
+          timestamp: '2026-09-12T03:00:00Z',
+        },
+      ],
+    }
+
+    render(
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>,
+    )
+
+    expect(screen.getAllByText('call-function').length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByText('wp_update_nav_menu_item').length,
+    ).toBeGreaterThan(0)
+  })
+
   it('explains when Application Password authentication is unavailable', () => {
     window.wpCommanderBootstrap = {
       ...developmentControlPlane,

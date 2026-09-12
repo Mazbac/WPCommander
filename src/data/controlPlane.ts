@@ -46,26 +46,30 @@ export type ControlPlaneSnapshot = {
   diagnosticsUrl: string
   credentialUrl: string
   writeAccessUrl: string
+  universalExecutionUrl: string
   activityUrl: string
+  executionActivityUrl: string
   restNonce: string
   applicationPasswordSupported: boolean
   connectionCredentialExists: boolean
   structuredWritesEnabled: boolean
+  universalExecutionEnabled: boolean
   resourceKinds?: string[]
   capabilities: CapabilitySummary[]
   activity: ActivityItem[]
+  executionActivity: ActivityItem[]
 }
 
 export const developmentControlPlane: ControlPlaneSnapshot = {
   siteName: 'Demo WordPress site',
   wordpressVersion: '7.1',
-  pluginVersion: '0.1.9-dev',
+  pluginVersion: '0.1.10-dev',
   accessMode: 'read-only',
   connectionStatus: 'ready',
   connectionMessage: 'Control plane is ready for a Custom GPT connection.',
   schemaUrl: 'https://example.com/wp-json/wpcommander/v1/openapi',
   schemaText: JSON.stringify(
-    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.9-dev' } },
+    { openapi: '3.1.0', info: { title: 'WPCommander', version: '0.1.10-dev' } },
     null,
     2,
   ),
@@ -76,11 +80,16 @@ export const developmentControlPlane: ControlPlaneSnapshot = {
     'https://example.com/wp-json/wpcommander/v1/setup/application-password',
   writeAccessUrl:
     'https://example.com/wp-json/wpcommander/v1/settings/write-access',
+  universalExecutionUrl:
+    'https://example.com/wp-json/wpcommander/v1/settings/universal-execution',
   activityUrl: 'https://example.com/wp-json/wpcommander/v1/activity',
+  executionActivityUrl:
+    'https://example.com/wp-json/wpcommander/v1/developer/activity',
   restNonce: 'development',
   applicationPasswordSupported: true,
   connectionCredentialExists: false,
   structuredWritesEnabled: false,
+  universalExecutionEnabled: false,
   resourceKinds: [
     'post',
     'post-meta',
@@ -129,6 +138,14 @@ export const developmentControlPlane: ControlPlaneSnapshot = {
       source: 'WPCommander',
     },
     {
+      id: 'universal-execute',
+      label: 'Universal WordPress execution',
+      description:
+        'Vendor-independent internal REST, PHP, SQL, filesystem, WP-CLI, and loaded-callable execution behind its own administrator gate.',
+      access: 'write',
+      source: 'WPCommander',
+    },
+    {
       id: 'execute',
       label: 'Run read-only abilities',
       description:
@@ -138,6 +155,7 @@ export const developmentControlPlane: ControlPlaneSnapshot = {
     },
   ],
   activity: [],
+  executionActivity: [],
 }
 
 declare global {

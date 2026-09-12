@@ -22,17 +22,18 @@
 - Discover exposed WordPress Abilities and WPCommander resource kinds.
 - Search resources by human text plus optional kind/field filters.
 - Inspect a resource with a bounded, redacted structured representation.
-- Inspect bounded plugin/theme/core source, REST routes, and WordPress-prefix database structure/sample rows when an unknown plugin needs deeper discovery.
+- Inspect bounded plugin/theme/core source, REST routes, WordPress-prefix database structure/sample rows, and hash-only metadata for any existing WordPress path when an unknown plugin needs deeper discovery.
 - Execute direct field-set commands for posts, media, terms, and comments plus exact nested set/remove commands for post-meta/options after wp-admin enables command access. JSON Pointer addressing includes builder data such as Elementor settings.
 - Require the fresh `resourceFingerprint` from inspection, verify the result, treat exact retries idempotently, and record bounded reversible activity automatically.
-- Revert an eligible prior change only while its resource still matches the audited after-state.
+- Revert an eligible prior structured change only while its resource still matches the audited after-state.
+- When narrower primitives cannot express the command, execute one vendor-independent privileged operation through internal REST, a loaded PHP callable, bounded PHP, SQL, filesystem mutation, or WP-CLI.
 
 ## Abuse and failure controls
 
 - Repeated mutation calls detect the already-applied after-state rather than duplicating a change. High-impact core options and secret-like keys/paths are excluded from the normal mutation surface.
-- A structured mutation fails closed when the target changed after inspection. Numeric array elements can be updated in place, but adding/removing array elements is blocked in 0.1.9 so revert remains lossless.
+- A structured mutation fails closed when the target changed after inspection. Numeric array elements can be updated in place, but adding/removing array elements remains outside the structured surface; universal execution is the generic fallback when that limitation matters.
 - Generic/resource/developer inspection must cap result count/value/file size and redact secret-like keys and values.
-- Bounded developer inspection is read-only and restricted to WordPress code roots and WordPress-prefixed tables; arbitrary SQL/PHP/WP-CLI/filesystem mutation is not a generic ability.
+- Bounded developer inspection remains read-only. Universal execution is a separate administrator-gated capability with bounded output/audit; existing file overwrite/move/delete requires a fresh SHA-256 where supported.
 - Permission checks happen on every read/write using the authenticated WordPress user; possession of a connection credential does not bypass WordPress capabilities.
 
 ## Universal-access layers
@@ -40,5 +41,5 @@
 - Structured resource plane: preferred for production-safe reads/writes, deterministic validation, audit, stale-state checks, and revert.
 - Native ability plane: dynamically exposes core/plugin/theme Abilities without OpenAPI growth or vendor adapters.
 - Developer inspection plane: bounded read-only source/runtime/database discovery for understanding unknown plugins without adapters.
-- Privileged execution plane: opt-in PHP execution, WP-CLI, arbitrary SQL, and filesystem mutation for tasks no narrower primitive can express; disabled on production by default until explicitly enabled.
+- Universal execution plane: opt-in internal REST, loaded PHP callables, bounded PHP/SQL, WordPress filesystem mutation, and WP-CLI for tasks no narrower primitive can express; disabled by default until explicitly enabled.
 - Specialized Elementor/theme/plugin expertise may be added later, but it must compile down to the generic planes rather than becoming a required adapter dependency.

@@ -33,6 +33,14 @@ const inspectorPath = path.join(
   'class-wpcommander-developer-inspect.php',
 )
 const inspector = await readFile(inspectorPath, 'utf8')
+if (
+  !inspector.includes("case 'stat-path'") ||
+  !inspector.includes("hash_file( 'sha256'")
+) {
+  throw new Error(
+    'Developer inspector must expose hash-only stat-path for stale-safe file execution.',
+  )
+}
 const forbiddenPatterns = [
   /\$wpdb->(?:query|insert|update|delete|replace)\s*\(/i,
   /\b(?:UPDATE|DELETE\s+FROM|INSERT\s+INTO|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i,
@@ -108,18 +116,84 @@ if (
   )
 }
 
+const executor = await readFile(
+  path.join(root, 'includes', 'class-wpcommander-developer-execute.php'),
+  'utf8',
+)
+for (const marker of [
+  "OPTION_ENABLED = 'wpcommander_universal_execution_enabled'",
+  "current_user_can( 'manage_options' )",
+  "true !== ( $input['confirmed'] ?? false )",
+  'MAX_OUTPUT_BYTES',
+  'MAX_CLI_SECONDS',
+  'expectedSha256',
+  'require_file_fingerprint',
+  'wpcommander_file_stale',
+  'wpcommander_sql_scope_blocked',
+  'wpcommander_credential_route_blocked',
+  'wpcommander_credential_callable_blocked',
+  'wpcommander_execution_path_escape',
+  'wpcommander_php_terminator_blocked',
+  'wpcommander_wp_cli_uses_dedicated_primitive',
+  'contentBase64',
+  'sanitize_error',
+  'contains_sensitive_context',
+  'sql_targets_external_schema',
+  'bound_select_limit',
+  'append_process_output',
+  'LOAD_FILE',
+  'record_activity',
+  "case 'internal-rest'",
+  "case 'call-function'",
+  "case 'php-eval'",
+  "case 'sql'",
+  "case 'write-file'",
+  "case 'wp-cli'",
+]) {
+  if (!executor.includes(marker)) {
+    throw new Error(`Universal execution safety marker missing: ${marker}`)
+  }
+}
+
 const core = await readFile(
   path.join(root, 'includes', 'class-wpcommander.php'),
   'utf8',
 )
 if (
   !core.includes(
-    "apply_filters( 'wpcommander_write_abilities_enabled', false )",
+    "return $this->executor->is_enabled() && current_user_can( 'manage_options' );",
   )
 ) {
-  throw new Error('Arbitrary write Abilities must remain disabled by default.')
+  throw new Error(
+    'Write Abilities must stay behind the universal execution admin gate.',
+  )
+}
+
+if (
+  !core.includes("true !== ( $params['confirmed'] ?? false )") ||
+  !core.includes("'contentBase64' => array(")
+) {
+  throw new Error(
+    'Privileged write Abilities and binary filesystem execution must remain explicit in the API contract.',
+  )
+}
+
+const fingerprintUses = executor.match(/require_file_fingerprint\s*\(/g) ?? []
+if (fingerprintUses.length < 3) {
+  throw new Error(
+    'Existing file move/delete must enforce the stat-path SHA-256 fingerprint helper.',
+  )
+}
+
+if (
+  executor.includes("'returnValue' => $value") ||
+  executor.includes("'output' => $this->bound_text( $output )")
+) {
+  throw new Error(
+    'php-eval must not return raw evaluated values/stdout through the privileged API.',
+  )
 }
 
 console.log(
-  `PHP parse + developer/mutation safety contracts passed (${phpFiles.length} files).`,
+  `PHP parse + inspection/mutation/universal-execution safety contracts passed (${phpFiles.length} files).`,
 )

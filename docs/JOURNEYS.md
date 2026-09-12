@@ -10,7 +10,8 @@
 6. When ready to permit normal edits, enable structured command access once in WPCommander wp-admin; this does not enable privileged execution or arbitrary plugin write Abilities.
 7. Ask for a normal change such as replacing text, a color, or a nested layout setting. The GPT resolves the target and sends one structured mutation command; WPCommander performs the safety preflight and verification internally.
 8. The GPT reports what changed. WPCommander rejects stale or unauthorized writes and records the change automatically.
-9. Broad, destructive, irreversible, or privileged operations ask for explicit confirmation; the admin can inspect activity and revert an eligible prior change from wp-admin or via the GPT.
+9. If a requested result cannot be expressed through structured resources or a registered Ability, the GPT may use the separately enabled universal execution plane. A clear user request for that privileged result supplies the operation intent; do not invent repetitive approval steps.
+10. Broad, destructive, irreversible, or otherwise ambiguous privileged operations require explicit confirmation; the admin can inspect activity and revert eligible structured changes from wp-admin or via the GPT.
 
 ## Returning use
 

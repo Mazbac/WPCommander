@@ -77,3 +77,7 @@ WPCommander must distinguish technical support from real authentication availabi
 ## 2026-09-12 — D018: Structured write access is a separate admin gate
 
 Normal structured mutations are disabled by default and can only be enabled from wp-admin with an authenticated WordPress REST nonce. This one-time command-access gate does not enable arbitrary plugin/theme write Abilities or privileged PHP/SQL/WP-CLI/filesystem execution; those remain separate higher-risk surfaces.
+
+## 2026-09-12 — D019: Universal capability is invariant; risk changes flow, not reach
+
+WPCommander must retain a vendor-independent route to every subsystem the WordPress/PHP process can legitimately operate: WordPress APIs, internal REST, loaded PHP callables, the WordPress database, the WordPress filesystem, and WP-CLI when available. New plugins/themes must not require WPCommander adapters to become controllable. Structured primitives remain preferred, while higher-risk operations use a separate administrator gate, confirmation semantics, bounded output, and audit. Security may change how an operation executes, but not remove the fundamental control path.

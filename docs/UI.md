@@ -19,11 +19,11 @@ WPCommander has a small operational admin UI. ChatGPT is the primary conversatio
 
 ## Overview contract
 
-The first screen should answer: Is WPCommander ready? How do I connect ChatGPT? Is normal command access enabled? What can it currently control? What changed recently?
+The first screen should answer: Is WPCommander ready? How do I connect ChatGPT? Is normal command access enabled? Is universal execution enabled? What can it currently control? What changed recently?
 
 Use a compact status row and one primary WordPress-style connection panel with three steps: explicitly generate/rotate a dedicated one-time Basic token, copy the site-specific Action schema, then copy the recommended GPT instructions. Direct schema paste is the default; the schema URL is secondary. Keep schema/instruction bodies collapsed behind details by default, and present diagnostics/capabilities as simple tables or rows rather than dashboard-card grids.
 
-Command access is a separate compact operational panel. Structured writes are disabled by default; an administrator may enable/disable them with one explicit control. The panel must state that this gate covers normal structured edits only and does not unlock arbitrary plugin write Abilities or privileged PHP/SQL/WP-CLI/filesystem execution.
+Command access is a separate compact operational panel with two independent controls. Structured writes enable normal narrow resource edits. Universal execution separately enables vendor-independent internal REST, write Abilities, loaded PHP callables, PHP/SQL, filesystem mutation, and WP-CLI. Both default off; enabling structured writes never implicitly enables the universal gate.
 
 ## States and accessibility
 
