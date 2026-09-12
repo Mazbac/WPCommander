@@ -5,10 +5,11 @@
 - Mode: active product development
 - Epic: universal WordPress control
 - Branch: `feat/control-plane-foundation`
-- Release candidate `0.1.11` is fully verified and packaged; commit/push is the remaining release step.
-- Production currently runs `0.1.10`; its public OpenAPI and authenticated manifest/diagnostics were explicitly verified on 2026-09-12.
+- `0.1.11` shipped the universal CRUD control plane. A Custom GPT schema import then exposed one validator incompatibility: the `updateWordPressResourceBatch` action description was 305 characters, above ChatGPT's 300-character limit.
+- Patch release `0.1.12` shortens that description, adds a static <=300-character Action-description contract, and is verified/packaged for immediate install.
+- Production was last explicitly API-verified on `0.1.10`; subsequent plugin installs must be confirmed from the live manifest before relying on the reported version.
 - Production authentication through the dedicated WordPress Application Password is working. The live manifest reported both structured writes and universal execution enabled at the time of verification.
-- Production content work is intentionally paused until 0.1.11 is completed and installed. A live page-duplication acceptance attempt was stopped after exposing execution/orchestration latency; it must not be continued with ad-hoc low-level experimentation.
+- Production content work remains paused only until the `0.1.12` schema-validator patch is installed and the refreshed Custom GPT Action schema imports cleanly; then controlled acceptance can resume.
 
 ## Working foundation
 
@@ -35,13 +36,14 @@
 
 - `npm run verify:full` passed on 2026-09-12: Prettier, oxlint with 0 warnings/errors, TypeScript, UI conformance, PHP parser/static safety contracts, 6 Vitest tests, production build, Playwright accessibility/E2E, and desktop/mobile visual regression. A final `npm run verify` also passed after the last non-UI OpenAPI/documentation cleanup.
 - The intentional compact admin redesign was visually reviewed before the desktop/mobile baselines were updated; an actual WCAG contrast issue and mojibake introduced during the refactor were fixed before acceptance.
-- Release package `release/wpcommander-0.1.11.zip` was built and inspected with canonical `wpcommander/` top-level folder, size 180420 bytes, SHA-256 `C30BE042A9E890B9C4899A293BF819242867CBB2FB9AB6D8C5EAF32F46CDE455`.
+- Patch verification for `0.1.12` passed via `npm run verify`; the new static contract rejects any literal Custom GPT Action description above 300 characters.
+- Release package `release/wpcommander-0.1.12.zip` was built with canonical `wpcommander/` top-level folder, size 180410 bytes, SHA-256 `A5F1ACCE21E502542781C304664E9EC63BE24E096B5F2A463B57C85A4E4D2291`.
 - The workstation still has no native WordPress/PHP runtime; backend release verification remains parser/static-contract plus later controlled production acceptance after install.
 
 ## Next
 
-1. Review the final 0.1.11 diff for unintended changes or secret leakage, then commit and push the coherent release work.
-2. Install 0.1.11 on production and refresh the Custom GPT Action schema/instructions without rotating the existing credential unless required.
+1. Commit and push the `0.1.12` schema-validator patch.
+2. Install `0.1.12`, copy the freshly generated Action schema into the Custom GPT, and confirm it imports without validation errors; keep the existing credential.
 3. Run one controlled end-to-end acceptance: discover source → Create from source → batch Update content/media → update the relevant WordPress relationship/navigation through the narrowest generic primitive → verify frontend/navigation. No provider adapter is allowed.
 4. Only after that acceptance succeeds resume normal production content work.
 

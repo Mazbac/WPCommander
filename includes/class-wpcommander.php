@@ -1256,7 +1256,7 @@ INSTRUCTIONS;
 					'post' => array(
 						'operationId' => 'updateWordPressResourceBatch',
 						'summary' => 'Update multiple paths in one WordPress resource',
-						'description' => 'Preferred for multi-field or structured builder-data transforms. Inspect once, then send up to 50 non-overlapping JSON Pointer changes. WPCommander prepares the resulting resource state in memory, performs the minimum WordPress write(s), verifies once, and records one reversible activity unit where safe.',
+						'description' => 'Preferred for multi-field or structured transforms. Inspect once, then send up to 50 non-overlapping JSON Pointer changes. WPCommander prepares state in memory, performs the minimum WordPress writes, verifies once, and records one reversible activity when safe.',
 						'security' => $security,
 						'requestBody' => array( 'required' => true, 'content' => array( 'application/json' => array( 'schema' => $this->get_mutation_batch_schema() ) ) ),
 						'responses' => $object_response,

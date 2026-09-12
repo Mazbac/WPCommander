@@ -178,6 +178,15 @@ const core = await readFile(
   path.join(root, 'includes', 'class-wpcommander.php'),
   'utf8',
 )
+
+for (const match of core.matchAll(/'description'\s*=>\s*'([^']*)'/g)) {
+  if (match[1].length > 300) {
+    throw new Error(
+      `Custom GPT Action description exceeds 300 characters (${match[1].length}).`,
+    )
+  }
+}
+
 if (
   !core.includes(
     "return $this->executor->is_enabled() && current_user_can( 'manage_options' );",
