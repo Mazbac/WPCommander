@@ -25,6 +25,7 @@
 - Update supported structured resources one field/path at a time or update up to 50 non-overlapping paths in one logical batch command.
 - Batch Update prepares changes in memory, performs the minimum resource write(s), verifies once, and records one reversible activity unit where the before-state fits the bounded envelope.
 - Delete supported post resources with a fresh fingerprint; default deletion moves to WordPress Trash and can be reverted while state remains fresh. Permanent deletion is explicitly irreversible.
+- Import up to 10 current-conversation images into the WordPress Media Library and return WordPress media URLs, dimensions, metadata, and common image-size variants for reuse by the connected GPT.
 - Revert eligible Create/Update/batch Update/Delete activity only while the relevant current state still matches the audited after-state.
 - Execute native WordPress Abilities when they are the narrowest semantic primitive.
 - Under Full control, fall back to vendor-independent internal REST, loaded PHP callables, bounded PHP/SQL, filesystem mutation, or WP-CLI when CRUD/Abilities cannot express the requested result.

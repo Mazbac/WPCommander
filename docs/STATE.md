@@ -5,11 +5,12 @@
 - Mode: active product development
 - Epic: universal WordPress control
 - Branch: `feat/control-plane-foundation`
-- `0.1.11` shipped the universal CRUD control plane. A Custom GPT schema import then exposed one validator incompatibility: the `updateWordPressResourceBatch` action description was 305 characters, above ChatGPT's 300-character limit.
-- Patch release `0.1.12` shortens that description, adds a static <=300-character Action-description contract, and is verified/packaged for immediate install.
+- `0.1.11` shipped the universal CRUD control plane; `0.1.12` fixed the Custom GPT 300-character Action-description validator limit and added a static contract for it.
+- `0.1.13` adds generic conversation-image transfer: user-uploaded or ChatGPT-generated current-conversation images can be imported into the WordPress Media Library through `openaiFileIdRefs`, and existing WordPress images can be returned as normal image/download URLs with dimensions and common size variants.
+- Media import is bounded to 10 images, Edit site/Full control plus `upload_files`, supported image MIME/content, WordPress upload-size limits, a 40 MP processing ceiling, HTTPS OpenAI file hosts, and idempotent replay keyed by a hash of the stable OpenAI file ID.
 - Production was last explicitly API-verified on `0.1.10`; subsequent plugin installs must be confirmed from the live manifest before relying on the reported version.
 - Production authentication through the dedicated WordPress Application Password is working. The live manifest reported both structured writes and universal execution enabled at the time of verification.
-- Production content work remains paused only until the `0.1.12` schema-validator patch is installed and the refreshed Custom GPT Action schema imports cleanly; then controlled acceptance can resume.
+- Production content work remains paused until `0.1.13` is installed, the refreshed Custom GPT Action schema imports cleanly, and controlled CRUD/media acceptance is completed.
 
 ## Working foundation
 
@@ -26,31 +27,30 @@
 - Structured Update keeps the existing exact pointer/field path and adds batch Update for up to 50 non-overlapping changes to one resource.
 - Batch Update prepares the full new state in memory, performs the minimum WordPress write(s), verifies once, records one bounded activity entry, and supports stale-safe revert where the before-state fits the reversible envelope.
 - Structured Delete currently covers posts/pages/custom post types, requires a fresh fingerprint, defaults to WordPress Trash, and records reversible activity; permanent deletion is irreversible.
-- Legacy `/resources/mutate` and `/resources/mutate-batch` routes remain compatibility aliases, while the generated OpenAPI/GPT vocabulary uses Create/Update/Update-batch/Delete.
-- Admin UX is being simplified to Connection → Site access → Recent activity. Inspect only / Edit site / Full control are the only user-facing access concepts (D020).
-- Full control always includes Edit site; legacy contradictory gate state is normalized so universal execution cannot remain enabled while structured edits are disabled.
-- Custom GPT instructions explicitly tell the GPT to inspect unknown software and use generic CRUD/Abilities/Execute rather than searching for adapters.
-- A credential-safe local operator helper exists at `scripts/live-api.ps1`; it stores the Basic token outside the repository using Windows CurrentUser protection and never prints the token.
 
 ## Verification status
 
-- `npm run verify:full` passed on 2026-09-12: Prettier, oxlint with 0 warnings/errors, TypeScript, UI conformance, PHP parser/static safety contracts, 6 Vitest tests, production build, Playwright accessibility/E2E, and desktop/mobile visual regression. A final `npm run verify` also passed after the last non-UI OpenAPI/documentation cleanup.
-- The intentional compact admin redesign was visually reviewed before the desktop/mobile baselines were updated; an actual WCAG contrast issue and mojibake introduced during the refactor were fixed before acceptance.
-- Patch verification for `0.1.12` passed via `npm run verify`; the new static contract rejects any literal Custom GPT Action description above 300 characters.
-- Release package `release/wpcommander-0.1.12.zip` was built with canonical `wpcommander/` top-level folder, size 180410 bytes, SHA-256 `A5F1ACCE21E502542781C304664E9EC63BE24E096B5F2A463B57C85A4E4D2291`.
-- The workstation still has no native WordPress/PHP runtime; backend release verification remains parser/static-contract plus later controlled production acceptance after install.
+- Full browser and static verification passed for the 0.1.11 foundation on 2026-09-12.
+- Release 0.1.12 passed the repository checks.
+- Release 0.1.13 passed repository checks plus browser accessibility and visual tests on 2026-09-13.
+- The 0.1.13 backend checks cover seven plugin PHP files including media transfer.
+- Release package: release/wpcommander-0.1.13.zip, 184940 bytes.
+- SHA-256: 504A0B0EB7E98DD502BEE501CFEB7DB87A74876F90C41A565BFB0824BC40F371.
+- The workstation has no native WordPress/PHP runtime; live backend acceptance still follows installation.
 
 ## Next
 
-1. Commit and push the `0.1.12` schema-validator patch.
-2. Install `0.1.12`, copy the freshly generated Action schema into the Custom GPT, and confirm it imports without validation errors; keep the existing credential.
-3. Run one controlled end-to-end acceptance: discover source → Create from source → batch Update content/media → update the relevant WordPress relationship/navigation through the narrowest generic primitive → verify frontend/navigation. No provider adapter is allowed.
-4. Only after that acceptance succeeds resume normal production content work.
+1. Install 0.1.13 and refresh the Custom GPT Action schema and recommended instructions.
+2. Confirm schema import, then live-test both a user-provided image and a ChatGPT-generated image through import, WordPress media use, and frontend verification.
+3. Run the controlled CRUD acceptance without provider adapters.
+4. Resume normal production content work only after those acceptance checks succeed.
 
 ## Known bounds
 
-- Structured CRUD is intentionally smaller than the universal surface; unsupported resource kinds/operations must continue through native Abilities or Full-control Execute, not through vendor adapters.
+- Structured CRUD is intentionally smaller than the universal surface; unsupported resource kinds or operations continue through native Abilities or Full-control Execute.
 - Numeric array insertion/removal is not yet a structured JSON Pointer operation.
 - Universal execution cannot promise generic automatic rollback and must be verified after execution.
-- WP-CLI depends on host process permissions and the `wp` binary; production availability has not yet been proven.
+- Conversation-image ingress depends on the temporary OpenAI Action download URL still being valid when the Action runs.
+- WordPress-to-chat images use normal HTTPS image/download URLs because Custom GPT Actions do not return image/video files as file responses.
+- WP-CLI depends on host process permissions and the wp binary; production availability has not yet been proven.
 - Direct schema paste remains the default Custom GPT setup path because URL import can be affected by hosting/WAF/encoding behavior.

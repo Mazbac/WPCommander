@@ -1294,6 +1294,28 @@ final class WPCommander_Mutations {
 		return $entry;
 	}
 
+	public function record_media_import_activity( int $attachment_id, string $request_hash ): array {
+		$entry = array(
+			'id'         => wp_generate_uuid4(),
+			'requestHash'=> $request_hash,
+			'actorId'    => get_current_user_id(),
+			'address'    => 'media/' . $attachment_id,
+			'kind'       => 'media',
+			'idValue'    => $attachment_id,
+			'key'        => '',
+			'taxonomy'   => '',
+			'pointer'    => '',
+			'operation'  => 'media-import',
+			'state'      => 'applied',
+			'timestamp'  => gmdate( 'c' ),
+			'reversible' => false,
+		);
+		$items = $this->get_activity();
+		array_unshift( $items, $entry );
+		update_option( self::OPTION_ACTIVITY, array_slice( $items, 0, self::MAX_ACTIVITY ), false );
+		return $entry;
+	}
+
 	private function request_hash( array $input ): string {
 		$payload = array(
 			'kind'        => $input['kind'],

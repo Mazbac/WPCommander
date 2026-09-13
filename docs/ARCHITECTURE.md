@@ -31,7 +31,7 @@ The stable mental model is **Discover/Inspect → Create/Read/Update/Delete → 
 
 ## External API
 
-The ChatGPT/OpenAPI surface stays compact: manifest/diagnostics; resource search, inspect, and search-inside; generic Create, Update, batch Update, Delete; activity/revert; developer inspection; Ability discovery/execution; and one universal Execute operation. Legacy mutation route aliases may remain for compatibility but are not the product vocabulary.
+The ChatGPT/OpenAPI surface stays compact: manifest/diagnostics; resource search, inspect, and search-inside; generic Create, Update, batch Update, Delete; conversation-image media ingress and WordPress image-link lookup; activity/revert; developer inspection; Ability discovery/execution; and one universal Execute operation. Legacy mutation route aliases may remain for compatibility but are not the product vocabulary.
 
 ## Authentication, access, and authorization
 

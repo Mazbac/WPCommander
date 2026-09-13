@@ -226,6 +226,41 @@ if (core.includes("'/wp-json/wpcommander/v1/resources/clone'")) {
   )
 }
 
+const mediaTransfer = await readFile(
+  path.join(root, 'includes', 'class-wpcommander-media-transfer.php'),
+  'utf8',
+)
+for (const marker of [
+  'MAX_FILES = 10',
+  'MAX_REMOTE_BYTES',
+  'MAX_IMAGE_PIXELS',
+  'openaiFileIdRefs',
+  'wp_safe_remote_get',
+  'limit_response_size',
+  'wp_get_image_mime',
+  'wp_getimagesize',
+  'media_handle_sideload',
+  'SOURCE_META_KEY',
+  'is_openai_download_url',
+  'oaiusercontent.com',
+]) {
+  if (!mediaTransfer.includes(marker)) {
+    throw new Error(`Chat image transfer safety marker missing: ${marker}`)
+  }
+}
+
+for (const marker of [
+  "'/media/import-chat-images'",
+  "'/media/links'",
+  "'operationId' => 'importChatImagesToWordPress'",
+  "'operationId' => 'getWordPressImageLinks'",
+  'including an image they uploaded or ChatGPT generated',
+]) {
+  if (!core.includes(marker)) {
+    throw new Error(`Chat image Action contract missing: ${marker}`)
+  }
+}
+
 for (const providerMarker of [
   '_elementor_data',
   'Elementor',

@@ -39,6 +39,12 @@
 - [x] Add bounded execution activity metadata and hash-only path inspection so existing files can be stale-checked without exposing contents.
 - [ ] Live-verify an unknown-plugin or cross-resource task that requires the universal fallback.
 
+### Epic: Conversation media transfer
+
+- [x] Import current-conversation images into the WordPress Media Library through the Custom GPT Actions file-reference contract.
+- [x] Support both user-provided and ChatGPT-generated images and return normal WordPress image/download URLs plus useful size variants.
+- [ ] Live-verify image generation/upload → media import → page usage through the connected Custom GPT.
+
 ## Later
 
-Richer media workflows, multisite fleet workflows, scheduled automation, and optional compatibility expertise remain later. Plugin/theme lifecycle, custom storage, code changes, and other site-local operations do not require dedicated roadmap features when they can already be composed through universal primitives.
+Advanced media transformation workflows, multisite fleet workflows, scheduled automation, and optional compatibility expertise remain later. Plugin/theme lifecycle, custom storage, code changes, and other site-local operations do not require dedicated roadmap features when they can already be composed through universal primitives.
